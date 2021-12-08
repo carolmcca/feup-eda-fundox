@@ -7,7 +7,7 @@
 typedef struct {
 	std::string name;
 	std::string color;
-	int score = 0;
+	int score;
 } Player;
 
 typedef struct {
@@ -15,21 +15,32 @@ typedef struct {
 	char row;
 	char col;
 	char direction;
-} Turn;
+}  Turn;
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
 
 void initBoard(board_t& board, const size_t boardSize);
 void showBoard(const board_t& board, const size_t boardSize);
 
-void setBag(const std::string file, std::vector<char>& bag); //Eduarda
-void shuffle(std::vector<char>& bag); //Eduarda
+bool valid(const std::string& inputType, const std::string errorMessage, const char terminator);
 
-void setRack(std::vector<char>& bag, std::vector<char>& rack); //Mariana
-void bubbleSort(std::vector<char>& v); //Eduarda
-void showRack(std::vector<char>& rack); //Mariana
+void readNumPlayers(int& numPlayers);
+void readNamePlayers(std::vector<Player>& players, const int& index);
 
-void removePlayer(std::vector<Player>& players); //Mariana
+void readWord(std::string& word, const std::vector<Player>& players, const int& index);
+void readDirection(char& direction);
+void readPosition(char& row, char& col);
 
-void verifyInput(); //Carol
+//void setBag(const string file, vector<char>& bag); //Eduarda
+//
+//void shuffle(vector<char>& bag); //Eduarda
+//
+//void setRack(vector<char>& bag, vector<char>& rack); //Mariana
+//
+void bubbleSort(vector<char>& v); //Eduarda
+//
+//void showRack(vector<char>& rack); //Mariana
+//
+//void removePlayer(vector<Player>& players); //Mariana
+
 

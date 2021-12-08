@@ -123,19 +123,33 @@ void readPosition(char& row, char& col) {
 	}
 }
 
-void setBag(const string file, vector<char>& bag); //Eduarda
+//void setBag(const string file, vector<char>& bag); //Eduarda
+//
+//void shuffle(vector<char>& bag); //Eduarda
+//
+//void setRack(vector<char>& bag, vector<char>& rack); //Mariana
+//
+void bubbleSort(vector<char>& v) {
+	int length = v.size();
+	bool stop = false;
 
-void shuffle(vector<char>& bag); //Eduarda
+	while (length > 1 && !stop) {
 
-void setRack(vector<char>& bag, vector<char>& rack); //Mariana
+		for (int j = 0; j < length - 1; j++)
+			if (v.at(j) > v.at(j + 1)) {
+				iter_swap(v.begin() + j, v.begin() + j + 1);
+			}
+			else {
+				stop = true;
+			}
 
-void bubbleSort(vector<char>& v); //Eduarda
-
-void showRack(vector<char>& rack); //Mariana
-
-void removePlayer(vector<Player>& players); //Mariana
-
-void verifyInput(); //Carol
+		length--;
+	}
+}
+//
+//void showRack(vector<char>& rack); //Mariana
+//
+//void removePlayer(vector<Player>& players); //Mariana
 
 int main() {
 	const size_t BOARD_SIZE = 13;
@@ -146,7 +160,7 @@ int main() {
 	vector<char> rack(RACK_MAX_SIZE);
 	vector<Player> players;
 	int numPlayers;
-	int SCORE_MAX;
+	int SCORE_MAX = 10; //ATENÇÂO NÂO È PARA FICAR
 
 
 	initBoard(board, BOARD_SIZE);
@@ -172,8 +186,8 @@ int main() {
 	//não esquecer show rack quando desistimos
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
-		setRack(bag, rack);
-		showRack(rack);
+		//setRack(bag, rack);
+		//showRack(rack);
 		showBoard(board, BOARD_SIZE);
 
 		readWord(turn.word, players, current);
@@ -183,7 +197,7 @@ int main() {
 			continue; //faltava este acho eu
 		}
 		else if (turn.word == "G") {
-			removePlayer(players);
+			//removePlayer(players);
 			numPlayers--;
 			continue;
 		}
