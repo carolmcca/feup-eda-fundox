@@ -38,116 +38,141 @@
 #include <iostream>
 #include <vector>
 #include "fundox.h"
+#include <string>
 
 using namespace std;
 
-int main() {
-	const std::string dfltColor = "\033[0m";
-	const std::string bgGrey = "\033[47m";
-	const std::string red = "\033[31m";
-	const std::string blue = "\033[34m";
-	const std::string green = "\033[92m";
-	const std::string magenta = "\033[95m";
-	bool validInput = false;
-	int numPlayers;
-	vector<string> colors = { red, blue, green, magenta };
+const std::string dfltColor = "\033[0m";
+const std::string bgGrey = "\033[47m";
+const std::string red = "\033[31m";
+const std::string blue = "\033[34m";
+const std::string green = "\033[92m";
+const std::string magenta = "\033[95m";
+const vector<string> colors = { red, blue, green, magenta };
 
-	while (!validInput) {
-		cout << "Please insert the number of players (2-4): ";
-		cin >> numPlayers;
-		if (cin.fail()) {
-			if (cin.eof()) {
-				cin.clear();
-			}
-			else {
-				cin.clear();
-				cin.ignore(10000, '\n');
-			}
-		}
-		else if (cin.peek() != '\n' || numPlayers < 2 || numPlayers > 4) {
-			cin.ignore(10000, '\n');
-		}
-		else {
-			cin.ignore(10000, '\n');
-			validInput = true;
-			continue;
-		}
-		cout << "Please insert an integer between 2 and 4.\n";
-	}
-
-	vector<Player> players(numPlayers); //pomos aqui ou no início e damos resize aqui?
-
-
-	string name;
-	cout << "Please insert the names of the players: \n";
-	for (int i = 0; i < numPlayers; i++) {
-		validInput = false;
-		while (!validInput) {
-			cout << colors[i] << "Player " << i + 1 << ": ";
-			getline(cin, players[i].name); //fiz getline para poder ser mais que um nome (suposto?)
-			if (cin.fail()) {
-				if (cin.eof()) {
-					cin.clear();
-				}
-				else {
-					cin.clear();
-					cin.ignore(10000, '\n');       //verificar se deu ctr+Z depois de meter o nome?
-				}
-			}
-			else {
-				validInput = true;
-			}
-		}
-		//verificar length e cin.fail (mudar para while provavelmente)
-		players[i].color = colors[i];
-	}
-	cout << dfltColor << endl;
-
-	int passPlays = 0;
-	int passRounds = 0;
-	int current = 0;
-	string word;
-	cout << players[current].color << players[current].name << "'s turn" << dfltColor << endl;
-	cout << "Word: ";
-	cin >> word;
-	cout << word << endl;
+bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
 	if (cin.fail()) {
 		if (cin.eof()) {
 			cin.clear();
 		}
 		else {
 			cin.clear();
-			cin.ignore(10000, '\n');
+			cin.ignore(10000, terminator);
 		}
-		cout << "Invalid play! You lost your turn...\n";
-		//continue;
 	}
-	else if (cin.peek() != '\n') {
-		cin.ignore(10000, '\n');
-		cout << "Invalid play! You must choose a single word.\n";
-		//continue;
+	else if (inputType == "cin") {
+		if (cin.peek() != terminator) {
+			cin.ignore(10000, terminator);
+		}
+		else {
+			cin.ignore(10000, terminator);
+			return true;
+		}
 	}
 	else {
-		cin.ignore(10000, '\n');
-		validInput = true;
+		return true;
+	}
+	cout << errorMessage;
+	return false;
+}
+
+
+void readNumPlayers(int& numPlayers) {
+	while (true) {
+		cout << "Please insert the number of players (2-4): ";
+		cin >> numPlayers;
+		if (valid("cin") && numPlayers >= 2 && numPlayers <= 4)
+			return;
+		cout << "The number must be an integer between 2 and 4!" << endl;
+	}
+}
+
+
+void readNamePlayers(vector<Player>& players, const int& index) {
+	while (true) {
+		cout << colors[index] << "Player " << index + 1 << ": ";
+		getline(cin, players[index].name); //fiz getline para poder ser mais que um nome (suposto?)
+		cout << dfltColor;
+		if (valid("getline", "Please insert a valid name\n")) {
+			return;
+		}
+	}
+}
+
+void readWord(string &word, const vector<Player>& players, const int& index){
+	cout << players[index].color << players[index].name << "'s turn" << dfltColor << endl;
+	while (true) {
+		cout << "Word: ";
+		cin >> word;
+		if (valid("cin", "Please insert a valid word.\n"))
+			return;
+	}
+}
+
+
+bool readChar(char& variable, const string& expectedValue, const string& inputMessage, const string& errorMessage, const char terminator = '\n') {
+	cout << inputMessage;
+	cin >> variable;
+	return valid("cin", errorMessage, terminator) && expectedValue.find(variable) != string::npos;
+}
+
+
+
+int main() {
+	int numPlayers;
+	vector<Player> players;
+
+
+	//leitura do nº de players
+	readNumPlayers(numPlayers);
+	players.resize(numPlayers);
+
+	cout << "Please insert the names of the players: \n";
+	for (int i = 0; i < numPlayers; i++) {
+		readNamePlayers(players, i);
+		players[i].color = colors[i];
+	}
+
+	int current = numPlayers - 1;
+	int passPlays = 0, passRounds = 0;
+	string word;
+	char row, column, direction;
+	//não esquecer show rack quando desistimos
+	while (true) {
+		current = (current + 1) % numPlayers;
+
+		readWord(word, players, current);
 		if (word == "P") {
 			passPlays++;
 			passRounds = passPlays / numPlayers;
-			//continue; //faltava este acho eu
+			continue; //faltava este acho eu
 		}
 		else if (word == "G") {
-			//removePlayer(players);
 			numPlayers--;
-			//continue;
+			continue;
 		}
-		//passPlays = 0;
+		passPlays = 0;
 		for (int i = 0; i < word.length(); i++)
-			word.at(i) = toupper(word.at(i)); //verificar ficheiro
+			word.at(i) = toupper(word.at(i)); 
+		cout << word << endl;
+
+		bool rowIsValid = false, columnIsValid = false;
+		while (!rowIsValid || !columnIsValid) {
+			rowIsValid = readChar(row, "ABCDEFGHIJKLM", "Position of 1st letter (ROW, column): ", "", ' ');
+			columnIsValid = readChar(column, "abcdefghijklm", "", "");
+			if (!rowIsValid || !columnIsValid)
+				cout << "Error. Example of valid input:\nA b\n";
+		}
+		
+		bool directionIsValid = false;
+		while (!directionIsValid) {
+			directionIsValid = readChar(direction, "HhVv", "Direction(H / V) : ", "");
+			if (!directionIsValid)
+				cout << "The input must be H/h for horizontal or v/V for vertical!\n";
+		}
+
 	}
 
 
-	cout << passPlays << endl;
-	cout << passRounds << endl;
-	cout << numPlayers << endl;
+	
 }
-
