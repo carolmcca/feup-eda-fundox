@@ -4,11 +4,18 @@
 #include <utility>
 
 
-struct Player {
+typedef struct {
 	std::string name;
 	std::string color;
 	int score = 0;
-};
+} Player;
+
+typedef struct {
+	std::string word;
+	char row;
+	char col;
+	char direction;
+} Turn;
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
 

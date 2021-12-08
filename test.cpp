@@ -52,22 +52,15 @@ const vector<string> colors = { red, blue, green, magenta };
 
 bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
 	if (cin.fail()) {
-		if (cin.eof()) {
-			cin.clear();
-		}
-		else {
-			cin.clear();
+		cin.clear();
+		if (!cin.eof())
 			cin.ignore(10000, terminator);
-		}
 	}
 	else if (inputType == "cin") {
-		if (cin.peek() != terminator) {
-			cin.ignore(10000, terminator);
-		}
-		else {
-			cin.ignore(10000, terminator);
+		bool correctTerminator = cin.peek() == terminator;
+		cin.ignore(10000, terminator);
+		if (correctTerminator)
 			return true;
-		}
 	}
 	else {
 		return true;
@@ -75,7 +68,6 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 	cout << errorMessage;
 	return false;
 }
-
 
 void readNumPlayers(int& numPlayers) {
 	while (true) {
@@ -86,7 +78,6 @@ void readNumPlayers(int& numPlayers) {
 		cout << "The number must be an integer between 2 and 4!" << endl;
 	}
 }
-
 
 void readNamePlayers(vector<Player>& players, const int& index) {
 	while (true) {
@@ -109,14 +100,40 @@ void readWord(string &word, const vector<Player>& players, const int& index){
 	}
 }
 
-
-bool readChar(char& variable, const string& expectedValue, const string& inputMessage, const string& errorMessage, const char terminator = '\n') {
-	cout << inputMessage;
-	cin >> variable;
-	return valid("cin", errorMessage, terminator) && expectedValue.find(variable) != string::npos;
+void readDirection(char& direction) {
+	bool directionIsValid = false;
+	while (true) {
+		string expectedValues = "vVhH";
+		cout << "Direction(H / V) : ";
+		cin >> direction;
+		if (valid("cin", "") && expectedValues.find(direction) != string::npos)
+			return;
+		else
+			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
+	}
 }
 
-
+void readPosition(char& row, char& col) {
+	string rows = "ABCDEFGHIJKLM", cols = "abcdefghijklm";
+	char sep;
+	string line;
+	while (true) {
+		cout << "Position of 1st letter (ROW column): " << endl;
+		getline(cin, line);
+		if (valid("getline", "") && line.size() == 3) {
+			if (line[1] == ' ') {
+				row = line[0];
+				col = line[2];
+				if (rows.find(row) != string::npos && cols.find(col) != string::npos)
+					return;
+				cout << "Error. Example of valid input:\nA b" << endl;
+			}
+		}
+		else {
+			cout << "Error. Example of valid input:\nA b" << endl;
+		}
+	}
+}
 
 int main() {
 	int numPlayers;
@@ -136,7 +153,7 @@ int main() {
 	int current = numPlayers - 1;
 	int passPlays = 0, passRounds = 0;
 	string word;
-	char row, column, direction;
+	char row, col, direction;
 	//não esquecer show rack quando desistimos
 	while (true) {
 		current = (current + 1) % numPlayers;
@@ -153,23 +170,11 @@ int main() {
 		}
 		passPlays = 0;
 		for (int i = 0; i < word.length(); i++)
-			word.at(i) = toupper(word.at(i)); 
-		cout << word << endl;
+			word[i] = toupper(word[i]); 
 
-		bool rowIsValid = false, columnIsValid = false;
-		while (!rowIsValid || !columnIsValid) {
-			rowIsValid = readChar(row, "ABCDEFGHIJKLM", "Position of 1st letter (ROW, column): ", "", ' ');
-			columnIsValid = readChar(column, "abcdefghijklm", "", "");
-			if (!rowIsValid || !columnIsValid)
-				cout << "Error. Example of valid input:\nA b\n";
-		}
+		readPosition(row, col);
+		readDirection(direction);
 		
-		bool directionIsValid = false;
-		while (!directionIsValid) {
-			directionIsValid = readChar(direction, "HhVv", "Direction(H / V) : ", "");
-			if (!directionIsValid)
-				cout << "The input must be H/h for horizontal or v/V for vertical!\n";
-		}
 
 	}
 
