@@ -8,14 +8,18 @@
 
 using namespace std;
 
-//colors
+//set colors
 const std::string dfltColor = "\033[0m";
 const std::string bgGrey = "\033[47m";
 const std::string red = "\033[31m";
 const std::string blue = "\033[34m";
 const std::string green = "\033[92m";
 const std::string magenta = "\033[95m";
+const std::string black = "\033[30m";
 const vector<string> colors = { red, blue, green, magenta };
+
+const int NUM_MAX_ATTEMPTS = 3;
+const size_t BOARD_SIZE = 13;
 
 void initBoard(board_t& board, const size_t boardSize) {
 	for (int i = 0; i < boardSize; i++) {
@@ -25,10 +29,9 @@ void initBoard(board_t& board, const size_t boardSize) {
 		}
 	}
 }
-
 void showBoard(const board_t& board, const size_t boardSize) {
 	string letters = "ABCDEFGHIJKLM";
-	cout << "    a b c d e f g h i j k l m" << endl;
+	cout << "\n    a b c d e f g h i j k l m" << endl;
 	for (int i = 0; i < boardSize; i++) {
 		cout << " " << letters[i] << " " << bgGrey << " ";
 		for (int j = 0; j < boardSize; j++) {
@@ -56,8 +59,7 @@ void setBag(ifstream& extractFile, vector<char>& bag)
 	shuffle(bag.begin(), bag.end(), g);
 }
 
-void setRack(vector<char>& bag, vector<char>& rack)
-{
+void setRack(vector<char>& bag, vector<char>& rack){
 	int i;
 	const int RACK_SIZE = rack.size();
 	for (i = 0; i < 7 - RACK_SIZE; i++) {
@@ -65,6 +67,15 @@ void setRack(vector<char>& bag, vector<char>& rack)
 	}
 	sort(rack.begin(), rack.end());
 	bag.resize(bag.size() - i);
+}
+void showRack(const vector<char>& rack) {
+	cout << endl;
+	for (int i = 0; i < BOARD_SIZE + 3 - rack.size(); i++)
+		cout << " ";
+	cout << bgGrey << black << " ";
+	for (int i = 0; i < rack.size(); i++)
+		cout << rack[i] << " ";
+	cout << dfltColor << endl << endl;
 }
 
 bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
@@ -95,26 +106,75 @@ void readNumPlayers(int& numPlayers) {
 		cout << "The number must be an integer between 2 and 4!" << endl;
 	}
 }
-
 void readNamePlayers(vector<Player>& players, const int& index) {
 	while (true) {
 		cout << colors[index] << "Player " << index + 1 << ": ";
 		getline(cin, players[index].name); //fiz getline para poder ser mais que um nome (suposto?)
 		cout << dfltColor;
 		if (valid("getline", "Please insert a valid name\n")) {
+			if (players[index].name.size() == 0)
+				players[index].name = "Player " + to_string(index+1);
 			return;
 		}
 	}
-	//verificar se já existe alguém com esse nome?
-	//verificar se o nome não é uma string vazia?
 }
 
-bool readWord(string& word, const vector<Player>& players) {
+bool searchWord(string path, string word) {
+	bool found = false;
+	ifstream wordsFile;
+	wordsFile.open(path);
+
+	if (!wordsFile.is_open()) {
+		cout << "Error! File '" << path << "' not found.\n";
+		exit(1);
+	}
+
+	while (!wordsFile.eof() && !found) {
+		string entry;
+		wordsFile >> entry;
+		if (entry == word)
+			found = true;
+	}
+	wordsFile.close();
+ 
+  return found;
+}
+
+int readWord(string& word, vector<Player>& players, int& index, int& passTurns, const string& dictionary) {
+	cout << players[index].color << players[index].name << "'s turn" << dfltColor << endl;
+	int attempts = 0;
+	while (attempts < NUM_MAX_ATTEMPTS) {
 		cout << "Word: ";
 		cin >> word;
-		return valid("cin", "Please insert a valid word.\n");
-}
+		if (!valid("cin", "Please insert a valid word.\n")) {
+			attempts++;
+		}
+		else {
+			if (word == "P") {
+				passTurns++;
+				return 1;
+			}
+			else if (word == "G") {
+				players.erase(players.begin() + index); // Remove player
+				index = (index + players.size() - 1) % players.size();
+				return 2;
+			}
 
+			else {
+				for (int i = 0; i < word.length(); i++)
+					word[i] = tolower(word[i]); //verificar ficheiro
+				if (!searchWord(dictionary, word)) {
+					attempts++;
+					cout << "The inserted word isn't in the dictionary, please insert a valid word.\n";
+				}
+				else
+					return 4;
+			}
+		}
+	}
+	cout << "Maximum number of attempts reached. You lost your turn!\n";
+	return 3;
+}
 void readDirection(char& direction) {
 	bool directionIsValid = false;
 	while (true) {
@@ -127,7 +187,6 @@ void readDirection(char& direction) {
 			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
 	}
 }
-
 void readPosition(char& row, char& col) {
 	string rows = "ABCDEFGHIJKLM", cols = "abcdefghijklm";
 	char sep;
@@ -150,58 +209,33 @@ void readPosition(char& row, char& col) {
 	}
 }
 
-bool searchWord(string path, string word) {
-  bool found = false;
-  ifstream wordsFile;
-  wordsFile.open(path);
-  cout << "path: " << path << endl;
 
-  cout << "is open: " << wordsFile.is_open() << endl;
-  if(wordsFile.is_open()){
-	  while (!wordsFile.eof() && !found) {
-		  string entry;
-		  wordsFile >> entry;
-		  if (entry == word)
-			  found = true;
-	  }
-	  wordsFile.close();
-  }
-  
-  return found;
-}
-
-void showRack(const vector<char> &rack) {
-	cout << endl;
-	for (int i = 0; i < rack.size(); i++)
-		cout << bgGrey << red << rack[i] << " ";
-	cout << dfltColor << endl << endl;
-}
 
 int main() {
-	const size_t BOARD_SIZE = 13;
-
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
 	vector<char> bag; 
 	vector<char> rack;
 	vector<Player> players;
 	int numPlayers;
 	int SCORE_MAX;
-	string path, trash;
+	string dictionaryPath, trash;
 
 	initBoard(board, BOARD_SIZE);
-	ifstream extractFile("CONFIG.txt");
 
+	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
+	ifstream extractFile("CONFIG.txt");
+	if (!extractFile.is_open()){
+		cout << "File CONFIG.txt not found!" << endl;
+		exit(1);
+	}
 	extractFile.ignore(14);
 	extractFile >> SCORE_MAX;
-	/*cout << SCORE_MAX << endl;*/
 	extractFile.ignore(14);
-	getline(extractFile, path);
-
+	getline(extractFile, dictionaryPath);
 	getline(extractFile, trash);
+
 	setBag(extractFile, bag);
 
-
-	//leitura do n� de players
 	readNumPlayers(numPlayers);
 	players.resize(numPlayers);
 
@@ -211,67 +245,27 @@ int main() {
 		players[i].color = colors[i];
 	}
 
-
 	int current = numPlayers - 1;
-	int passTurns = 0, passRounds = 0;
+	int passTurns = 0, input;
 	Turn turn;
-	//não esquecer show rack quando desistimos
-	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
+	while (players[current].score < SCORE_MAX && passTurns / numPlayers < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
 		setRack(bag, rack);
 		showBoard(board, BOARD_SIZE);
 		showRack(rack);
-		int attempts = 0;
 
-		cout << players[current].color << players[current].name << "'s turn" << dfltColor << endl;
-		while (attempts < 3) {
-			if (!readWord(turn.word, players)) {
-				attempts++;
-				cout << "valid = false\n";
-			}
-			else {
-				cout << "valid true";
-				if (turn.word == "P") {
-					passTurns++;
-					passRounds = passTurns / numPlayers;
-					continue; //faltava este acho eu
-				}
-				else if (turn.word == "G") {
-					players.erase(players.begin() + current); // Remove player
-					current--;
-					numPlayers--;
-					continue;
-				}
-				
-				else {
-					cout << "n passou nem des\n";
-					for (int i = 0; i < turn.word.length(); i++)
-						turn.word[i] = tolower(turn.word[i]); //verificar ficheiro
-					cout << turn.word << endl;
-					if (!searchWord(path, turn.word)) {
-						attempts++;
-					}
-					else 
-						break;
-				}
-			}	
-
-		}
-		if (attempts == 3) {
-			cout << "3 invalid attempts. You lost your turn.\n";
+		input = readWord(turn.word, players, current, passTurns, dictionaryPath);
+		if (input != 1)
+			passTurns = 0;
+		if (input != 4) {
+			if (input == 2)
+				numPlayers = players.size();
 			continue;
 		}
-		passTurns = 0;
-
 
 		readPosition(turn.row, turn.col);
 		readDirection(turn.direction);
-		//verificar se a palavra encaixa
-
-		//atualizar o board
-
 	}
-
 	return 0;
 }
 
