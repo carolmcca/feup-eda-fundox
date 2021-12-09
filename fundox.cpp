@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <random>
 
 using namespace std;
 
@@ -39,11 +40,38 @@ void showBoard(const board_t& board, const size_t boardSize) {
 	}
 }
 
+void setBag(ifstream& extractFile, vector<char>& bag)
+{
+	char letter;
+	int num_occurences;
+
+	while (extractFile >> letter >> num_occurences)
+		for (int i = 1; i <= num_occurences; i++)
+			bag.push_back(letter);
+
+	srand(time(NULL));
+	random_device rd;
+	mt19937 g(rd());
+
+	shuffle(bag.begin(), bag.end(), g);
+}
+
+void setRack(vector<char>& bag, vector<char>& rack)
+{
+	int i;
+	const int RACK_SIZE = rack.size();
+	for (i = 0; i < 7 - RACK_SIZE; i++) {
+		rack.push_back(bag[bag.size()-i-1]);
+	}
+	sort(rack.begin(), rack.end());
+	bag.resize(bag.size() - i);
+}
+
 bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
 	if (cin.fail()) {
-		cin.clear();
 		if (!cin.eof())
 			cin.ignore(10000, terminator);
+		cin.clear();
 	}
 	else if (inputType == "cin") {
 		bool correctTerminator = cin.peek() == terminator;
@@ -77,16 +105,14 @@ void readNamePlayers(vector<Player>& players, const int& index) {
 			return;
 		}
 	}
+	//verificar se já existe alguém com esse nome?
+	//verificar se o nome não é uma string vazia?
 }
 
-void readWord(string& word, const vector<Player>& players, const int& index) {
-	cout << players[index].color << players[index].name << "'s turn" << dfltColor << endl;
-	while (true) {
+bool readWord(string& word, const vector<Player>& players) {
 		cout << "Word: ";
 		cin >> word;
-		if (valid("cin", "Please insert a valid word.\n"))
-			return;
-	}
+		return valid("cin", "Please insert a valid word.\n");
 }
 
 void readDirection(char& direction) {
@@ -124,63 +150,55 @@ void readPosition(char& row, char& col) {
 	}
 }
 
-void setBag(const string file, vector<char>& bag) { } //Eduarda
-
-void shuffle(vector<char>& bag) { } //Eduarda
-
-void setRack(vector<char>& bag, vector<char>& rack) { } //Mariana
-
-void bubbleSort(vector<char>& v) {
-	int length = v.size();
-	bool stop = false;
-
-	while (length > 1 && !stop) {
-
-		for (int j = 0; j < length - 1; j++)
-			if (v.at(j) > v.at(j + 1)) {
-				iter_swap(v.begin() + j, v.begin() + j + 1);
-			}
-			else {
-				stop = true;
-			}
-
-		length--;
-	}
-}
-
-void showRack(vector<char>& rack) { } //Mariana
-
 bool searchWord(string path, string word) {
   bool found = false;
-  ifstream words;
-  words.open(path);
+  ifstream wordsFile;
+  wordsFile.open(path);
+  cout << "path: " << path << endl;
 
-  while (!words.eof() && !found) {
-    string entry;
-    words >> entry;
-    if (entry == word)
-      found = true;
+  cout << "is open: " << wordsFile.is_open() << endl;
+  if(wordsFile.is_open()){
+	  while (!wordsFile.eof() && !found) {
+		  string entry;
+		  wordsFile >> entry;
+		  if (entry == word)
+			  found = true;
+	  }
+	  wordsFile.close();
   }
-  words.close();
+  
   return found;
+}
+
+void showRack(const vector<char> &rack) {
+	cout << endl;
+	for (int i = 0; i < rack.size(); i++)
+		cout << bgGrey << red << rack[i] << " ";
+	cout << dfltColor << endl << endl;
 }
 
 int main() {
 	const size_t BOARD_SIZE = 13;
-	const size_t RACK_MAX_SIZE = 7;
 
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
-	vector<char> bag; //esp�cie de vetor que tem uma chave e um valor atribuido � chave, chave - letra, valor - quantidade de letras
-	vector<char> rack(RACK_MAX_SIZE);
+	vector<char> bag; 
+	vector<char> rack;
 	vector<Player> players;
 	int numPlayers;
-	int SCORE_MAX = 10; //ATEN��O N�O � PARA FICAR
-
+	int SCORE_MAX;
+	string path, trash;
 
 	initBoard(board, BOARD_SIZE);
-	//ler pontos do ficheiro
-	// SCORE_MAX = ?;
-	//setBag(file, bag);
+	ifstream extractFile("CONFIG.txt");
+
+	extractFile.ignore(14);
+	extractFile >> SCORE_MAX;
+	/*cout << SCORE_MAX << endl;*/
+	extractFile.ignore(14);
+	getline(extractFile, path);
+
+	getline(extractFile, trash);
+	setBag(extractFile, bag);
 
 
 	//leitura do n� de players
@@ -195,33 +213,55 @@ int main() {
 
 
 	int current = numPlayers - 1;
-	int passPlays = 0, passRounds = 0;
+	int passTurns = 0, passRounds = 0;
 	Turn turn;
-	//n�o esquecer show rack quando desistimos
+	//não esquecer show rack quando desistimos
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
-		//setRack(bag, rack);
-		//showRack(rack);
+		setRack(bag, rack);
 		showBoard(board, BOARD_SIZE);
+		showRack(rack);
+		int attempts = 0;
 
-		readWord(turn.word, players, current);
-		if (turn.word == "P") {
-			passPlays++;
-			passRounds = passPlays / numPlayers;
-			continue; //faltava este acho eu
+		cout << players[current].color << players[current].name << "'s turn" << dfltColor << endl;
+		while (attempts < 3) {
+			if (!readWord(turn.word, players)) {
+				attempts++;
+				cout << "valid = false\n";
+			}
+			else {
+				cout << "valid true";
+				if (turn.word == "P") {
+					passTurns++;
+					passRounds = passTurns / numPlayers;
+					continue; //faltava este acho eu
+				}
+				else if (turn.word == "G") {
+					players.erase(players.begin() + current); // Remove player
+					current--;
+					numPlayers--;
+					continue;
+				}
+				
+				else {
+					cout << "n passou nem des\n";
+					for (int i = 0; i < turn.word.length(); i++)
+						turn.word[i] = tolower(turn.word[i]); //verificar ficheiro
+					cout << turn.word << endl;
+					if (!searchWord(path, turn.word)) {
+						attempts++;
+					}
+					else 
+						break;
+				}
+			}	
+
 		}
-		else if (turn.word == "G") {
-      players.erase(players.begin() + current); // Remove player
-      current--;
-			numPlayers--;
+		if (attempts == 3) {
+			cout << "3 invalid attempts. You lost your turn.\n";
 			continue;
 		}
-		passPlays = 0;
-		for (int i = 0; i < turn.word.length(); i++)
-			turn.word[i] = tolower(turn.word[i]); //verificar ficheiro
-
-    string path = "WORDS_EN.txt"; // TODO: string to be read from CONFIG.txt
-    searchWord(path, turn.word); // TODO: do something with the return value
+		passTurns = 0;
 
 
 		readPosition(turn.row, turn.col);

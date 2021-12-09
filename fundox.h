@@ -27,19 +27,15 @@ bool valid(const std::string& inputType, const std::string errorMessage, const c
 void readNumPlayers(int& numPlayers);
 void readNamePlayers(std::vector<Player>& players, const int& index);
 
-void readWord(std::string& word, const std::vector<Player>& players, const int& index);
+bool readWord(std::string& word, const std::vector<Player>& players);
 void readDirection(char& direction);
 void readPosition(char& row, char& col);
 
 void setBag(const std::string file, std::vector<char>& bag); //Eduarda
 
-void shuffle(std::vector<char>& bag); //Eduarda
+void setRack(std::vector<char>& rack); //Mariana
 
-void setRack(std::vector<char>& bag, std::vector<char>& rack); //Mariana
-
-void bubbleSort(std::vector<char>& v); //Eduarda
-
-void showRack(std::vector<char>& rack); //Mariana
+void showRack(const std::vector<char>& rack); //Mariana
 
 
 
