@@ -15,7 +15,7 @@ typedef struct {
 	char row;
 	char col;
 	char direction;
-}  Turn;
+} Turn;
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
 
@@ -31,16 +31,15 @@ void readWord(std::string& word, const std::vector<Player>& players, const int& 
 void readDirection(char& direction);
 void readPosition(char& row, char& col);
 
-//void setBag(const string file, vector<char>& bag); //Eduarda
-//
-//void shuffle(vector<char>& bag); //Eduarda
-//
-//void setRack(vector<char>& bag, vector<char>& rack); //Mariana
-//
-void bubbleSort(vector<char>& v); //Eduarda
-//
-//void showRack(vector<char>& rack); //Mariana
-//
-//void removePlayer(vector<Player>& players); //Mariana
+void setBag(const std::string file, std::vector<char>& bag); //Eduarda
+
+void shuffle(std::vector<char>& bag); //Eduarda
+
+void setRack(std::vector<char>& bag, std::vector<char>& rack); //Mariana
+
+void bubbleSort(std::vector<char>& v); //Eduarda
+
+void showRack(std::vector<char>& rack); //Mariana
+
 
 

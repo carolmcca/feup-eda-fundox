@@ -1,5 +1,6 @@
 #include "fundox.h"
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <utility>
 #include <string>
@@ -123,12 +124,12 @@ void readPosition(char& row, char& col) {
 	}
 }
 
-//void setBag(const string file, vector<char>& bag); //Eduarda
-//
-//void shuffle(vector<char>& bag); //Eduarda
-//
-//void setRack(vector<char>& bag, vector<char>& rack); //Mariana
-//
+void setBag(const string file, vector<char>& bag) { } //Eduarda
+
+void shuffle(vector<char>& bag) { } //Eduarda
+
+void setRack(vector<char>& bag, vector<char>& rack) { } //Mariana
+
 void bubbleSort(vector<char>& v) {
 	int length = v.size();
 	bool stop = false;
@@ -146,21 +147,34 @@ void bubbleSort(vector<char>& v) {
 		length--;
 	}
 }
-//
-//void showRack(vector<char>& rack); //Mariana
-//
-//void removePlayer(vector<Player>& players); //Mariana
+
+void showRack(vector<char>& rack) { } //Mariana
+
+bool searchWord(string path, string word) {
+  bool found = false;
+  ifstream words;
+  words.open(path);
+
+  while (!words.eof() && !found) {
+    string entry;
+    words >> entry;
+    if (entry == word)
+      found = true;
+  }
+  words.close();
+  return found;
+}
 
 int main() {
 	const size_t BOARD_SIZE = 13;
 	const size_t RACK_MAX_SIZE = 7;
 
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
-	vector<char> bag; //espécie de vetor que tem uma chave e um valor atribuido à chave, chave - letra, valor - quantidade de letras
+	vector<char> bag; //espï¿½cie de vetor que tem uma chave e um valor atribuido ï¿½ chave, chave - letra, valor - quantidade de letras
 	vector<char> rack(RACK_MAX_SIZE);
 	vector<Player> players;
 	int numPlayers;
-	int SCORE_MAX = 10; //ATENÇÂO NÂO È PARA FICAR
+	int SCORE_MAX = 10; //ATENï¿½ï¿½O Nï¿½O ï¿½ PARA FICAR
 
 
 	initBoard(board, BOARD_SIZE);
@@ -169,7 +183,7 @@ int main() {
 	//setBag(file, bag);
 
 
-	//leitura do nº de players
+	//leitura do nï¿½ de players
 	readNumPlayers(numPlayers);
 	players.resize(numPlayers);
 
@@ -183,7 +197,7 @@ int main() {
 	int current = numPlayers - 1;
 	int passPlays = 0, passRounds = 0;
 	Turn turn;
-	//não esquecer show rack quando desistimos
+	//nï¿½o esquecer show rack quando desistimos
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
 		//setRack(bag, rack);
@@ -197,13 +211,18 @@ int main() {
 			continue; //faltava este acho eu
 		}
 		else if (turn.word == "G") {
-			//removePlayer(players);
+      players.erase(players.begin() + current); // Remove player
+      current--;
 			numPlayers--;
 			continue;
 		}
 		passPlays = 0;
 		for (int i = 0; i < turn.word.length(); i++)
-			turn.word[i] = toupper(turn.word[i]); //verificar ficheiro
+			turn.word[i] = tolower(turn.word[i]); //verificar ficheiro
+
+    string path = "WORDS_EN.txt"; // TODO: string to be read from CONFIG.txt
+    searchWord(path, turn.word); // TODO: do something with the return value
+
 
 		readPosition(turn.row, turn.col);
 		readDirection(turn.direction);
@@ -219,8 +238,8 @@ int main() {
 //initialiar o tabuleiro (13x13)
 //ler numero de pontos do ficheiro
 //letras no bag
-//desordenar o bag (rand de vetor de números)
-//rack (7) - ordem alfabética
+//desordenar o bag (rand de vetor de nï¿½meros)
+//rack (7) - ordem alfabï¿½tica
 //pedir o n de jogadores (com cor do jogador) - tem que estar enter 2 e 4
 //inicializar vector players (vector com cores) 
 //while()
