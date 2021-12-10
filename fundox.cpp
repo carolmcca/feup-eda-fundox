@@ -196,7 +196,7 @@ bool readDirection() {
 			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
 	}
 }
-void readPosition(char& row, char& col) {
+void readPosition(char &row, char &col) {
 	char sep;
 	string line;
 	while (true) {
@@ -216,27 +216,29 @@ void readPosition(char& row, char& col) {
 		}
 	}
 }
-vector<char> checkExistingLetters(string word, board_t& board, char& row, char& col, bool& isVertical, vector<char> rack, bool& validPosition) {
+vector<char> checkExistingLetters(string word, board_t& board, char row, char col, bool& isVertical, vector<char> rack, bool& validPosition) {
 	for (int i = 0; i < word.size(); i++)
 		word[i] = toupper(word[i]);
 
 	for (int i = 0; i < word.size(); i++) {
-		if (isVertical) {
-			if (word[i] != board[row + i][col].first) {
-				if (board[row + i][col].first == ' ') {
-					vector<char>::iterator pos = find(rack.begin(), rack.end(), word[i]);
-					if (pos != rack.end()) {
-						rack.erase(pos);
-					}
-					else {
-						validPosition = false;
-						break;
-					}
+		if (isVertical)
+			row++;
+		else
+			col++;
+		if (word[i] != board[row][col].first) {
+			if (board[row][col].first == ' ') {
+				vector<char>::iterator pos = find(rack.begin(), rack.end(), word[i]);
+				if (pos != rack.end()) {
+					rack.erase(pos);
 				}
 				else {
 					validPosition = false;
 					break;
 				}
+			}
+			else {
+				validPosition = false;
+				break;
 			}
 		}
 	}
