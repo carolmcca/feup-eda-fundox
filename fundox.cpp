@@ -112,8 +112,10 @@ void readNamePlayers(vector<Player>& players, const int& index) {
 		getline(cin, players[index].name); //fiz getline para poder ser mais que um nome (suposto?)
 		cout << dfltColor;
 		if (valid("getline", "Please insert a valid name\n")) {
-			if (players[index].name.size() == 0)
-				players[index].name = "Player " + to_string(index+1);
+			if (players[index].name.size() == 0) {
+				cout << "Your name will be Player" << index + 1 << endl;
+				players[index].name = "Player" + to_string(index + 1);
+			}
 			return;
 		}
 	}
@@ -187,8 +189,28 @@ void readDirection(char& direction) {
 			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
 	}
 }
+//void readPosition(char& row, char& col) {
+//	string rows = "ABCDEFGHIJKLM", cols = "abcdefghijklm";
+//	char sep;
+//	string line;
+//	while (true) {
+//		cout << "Position of 1st letter (ROW column): " << endl;
+//		getline(cin, line);
+//		if (valid("getline", "") && line.size() == 3) {
+//			if (line[1] == ' ') {
+//				row = line[0];
+//				col = line[2];
+//				if (rows.find(row) != string::npos && cols.find(col) != string::npos)
+//					return;
+//				cout << "Error. Example of valid input:\nA b" << endl;
+//			}
+//		}
+//		else {
+//			cout << "Error. Example of valid input:\nA b" << endl;
+//		}
+//	}
+//}
 void readPosition(char& row, char& col) {
-	string rows = "ABCDEFGHIJKLM", cols = "abcdefghijklm";
 	char sep;
 	string line;
 	while (true) {
@@ -196,9 +218,9 @@ void readPosition(char& row, char& col) {
 		getline(cin, line);
 		if (valid("getline", "") && line.size() == 3) {
 			if (line[1] == ' ') {
-				row = line[0];
-				col = line[2];
-				if (rows.find(row) != string::npos && cols.find(col) != string::npos)
+				row = line[0]-'A';
+				col = line[2]-'a';
+				if (0<=row && BOARD_SIZE > row && 0 <= col && BOARD_SIZE > col)
 					return;
 				cout << "Error. Example of valid input:\nA b" << endl;
 			}
@@ -261,7 +283,7 @@ int main() {
 			if (input == 2)
 				numPlayers = players.size();
 			continue;
-		}
+		} //ainda vou melhorar estes ifs, mas parece-me mais limpinho que ontem ahah
 
 		readPosition(turn.row, turn.col);
 		readDirection(turn.direction);
