@@ -6,6 +6,7 @@
 #include <string>
 #include <random>
 #include <algorithm>
+#include <time.h>
 
 using namespace std;
 
@@ -81,9 +82,13 @@ void showRack(const vector<char>& rack) {
 
 bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
 	if (cin.fail()) {
-		if (!cin.eof())
-			cin.ignore(10000, terminator);
-		cin.clear();
+		if (cin.eof()){
+      cin.clear();
+    }	
+    else{
+      cin.clear();
+      cin.ignore(1000, terminator);
+    }
 	}
 	else if (inputType == "cin") {
 		bool correctTerminator = cin.peek() == terminator;
@@ -99,12 +104,14 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 }
 
 void readNumPlayers(int& numPlayers) {
-	while (true) {
+  int i = 0;
+	while (i<3) {
 		cout << "Please insert the number of players (2-4): ";
 		cin >> numPlayers;
 		if (valid("cin") && numPlayers >= 2 && numPlayers <= 4)
 			return;
 		cout << "The number must be an integer between 2 and 4!" << endl;
+    i++;
 	}
 }
 void readNamePlayers(vector<Player>& players, const int& index) {
@@ -125,6 +132,10 @@ void readNamePlayers(vector<Player>& players, const int& index) {
 bool searchWord(string path, string word) {
 	bool found = false;
 	ifstream wordsFile;
+  for (int i = 0; i < path.size(); i++) {
+    cout << (int)path[i] << endl;
+  }
+  cout << (path=="WORDS_EN.txt") << endl;
 	wordsFile.open(path);
 
 	if (!wordsFile.is_open()) {
@@ -143,8 +154,8 @@ bool searchWord(string path, string word) {
 	return found;
 }
 
-int readWord(string& word, vector<Player>& players, int& index, int& passTurns, const string& dictionary) {
-	cout << players[index].color << players[index].name << "'s turn" << dfltColor << endl;
+int readWord(string& word, Player& player, const string& dictionary) {
+	cout << player.color << player.name << "'s turn" << dfltColor << endl;
 	int attempts = 0;
 	while (attempts < NUM_MAX_ATTEMPTS) {
 		cout << "Word: ";
@@ -154,15 +165,11 @@ int readWord(string& word, vector<Player>& players, int& index, int& passTurns, 
 		}
 		else {
 			if (word == "P") {
-				passTurns++;
 				return 1;
 			}
 			else if (word == "G") {
-				players.erase(players.begin() + index); // Remove player
-				index = (index + players.size() - 1) % players.size();
 				return 2;
 			}
-
 			else {
 				for (int i = 0; i < word.length(); i++)
 					word[i] = tolower(word[i]); //verificar ficheiro
@@ -171,42 +178,42 @@ int readWord(string& word, vector<Player>& players, int& index, int& passTurns, 
 					cout << "The inserted word isn't in the dictionary, please insert a valid word.\n";
 				}
 				else
-					return 4;
+					return 3;
 			}
 		}
 	}
 	cout << "Maximum number of attempts reached. You lost your turn!\n";
-	return 3;
+	return 1;
 }
-bool readDirection() {
+void readDirection(Turn& turn) {
 	char direction;
 	while (true) {
-		string expectedValues = "vVhH";
 		cout << "Direction(H / V) : ";
 		cin >> direction;
-		if (valid("cin", "")) {
-			if (direction == 'v' || direction == 'V')
-				return true;
-			else if (direction == 'h' || direction == 'H')
-				return false;
-			/*if (expectedValues.find(direction)!=string::npos){
-				return (direction == 'v' || direction == 'V')}*/ //Como fica melhor?
-		}
-		else
-			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
-	}
+		if (valid("cin")) {
+			if (direction == 'v' || direction == 'V') {
+				turn.isVertical = true;
+				return;
+			}
+			else if (direction == 'h' || direction == 'H') {
+				turn.isVertical = false;
+				return;
+			}
+    }
+		cout << "The input must be H/h for horizontal or v/V for vertical!\n";
+  }
 }
-void readPosition(char &row, char &col) {
+void readPosition(Turn& turn) {
 	char sep;
 	string line;
 	while (true) {
 		cout << "Position of 1st letter (ROW column): " << endl;
 		getline(cin, line);
-		if (valid("getline", "") && line.size() == 3) {
+		if (valid("getline") && line.size() == 3) {
 			if (line[1] == ' ') {
-				row = line[0] - 'A';
-				col = line[2] - 'a';
-				if (0 <= row && BOARD_SIZE > row && 0 <= col && BOARD_SIZE > col)
+				turn.row = (int)(line[0] - 'A');
+				turn.col = (int)(line[2] - 'a');
+				if (0 <= turn.row && BOARD_SIZE > turn.row && 0 <= turn.col && BOARD_SIZE > turn.col)
 					return;
 				cout << "Error. Example of valid input:\nA b" << endl;
 			}
@@ -291,23 +298,26 @@ int main() {
 		showBoard(board, BOARD_SIZE);
 		showRack(rack);
 
-		input = readWord(turn.word, players, current, passTurns, dictionaryPath);
-		if (input != 1)
-			passTurns = 0;
-		if (input != 4) {
-			if (input == 2)
-				numPlayers = players.size();
-			continue;
-		} //ainda vou melhorar estes ifs, mas parece-me mais limpinho que ontem ahah
-
-		readPosition(turn.row, turn.col);
-		turn.isVertical = readDirection();
+		input = readWord(turn.word, players[current], dictionaryPath);
+		switch(input){
+      case 1:
+        passTurns++;
+        continue;
+      case 2:
+        players.erase(players.begin() + current); // Remove player
+				current = (current - 1) % players.size();
+        continue;
+      case 3:
+        passTurns = 0;
+    }
+      
+		readPosition(turn);
+		readDirection(turn);
 
 		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
 		if (validPosition) {
 			rack = possibleRack;
-		}
-
+    }
 		showRack(rack); //just for test
 	}
 	return 0;

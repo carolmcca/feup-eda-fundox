@@ -13,8 +13,8 @@ typedef struct {
 
 typedef struct {
 	std::string word;
-	char row;
-	char col;
+	int row;
+	int col;
 	bool isVertical;
 } Turn;
 
@@ -33,9 +33,11 @@ bool valid(const std::string& inputType, const std::string errorMessage, const c
 void readNumPlayers(int& numPlayers);
 void readNamePlayers(std::vector<Player>& players, const int& index);
 
-int readWord(std::string& word, std::vector<Player>& players, int& index, int& passTurns, const std::string& dictionary);
-void readDirection(char& direction);
-void readPosition(char& row, char& col);
+bool searchWord(std::string path, std::string word);
+
+int readWord(std::string& word, Player& player, const std::string& dictionary);
+void readDirection(Turn& turn);
+void readPosition(Turn& turn);
 
 
 
