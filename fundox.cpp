@@ -5,6 +5,7 @@
 #include <utility>
 #include <string>
 #include <random>
+#include <algorithm>
 
 using namespace std;
 
@@ -59,11 +60,11 @@ void setBag(ifstream& extractFile, vector<char>& bag)
 	shuffle(bag.begin(), bag.end(), g);
 }
 
-void setRack(vector<char>& bag, vector<char>& rack){
+void setRack(vector<char>& bag, vector<char>& rack) {
 	int i;
 	const int RACK_SIZE = rack.size();
 	for (i = 0; i < 7 - RACK_SIZE; i++) {
-		rack.push_back(bag[bag.size()-i-1]);
+		rack.push_back(bag[bag.size() - i - 1]);
 	}
 	sort(rack.begin(), rack.end());
 	bag.resize(bag.size() - i);
@@ -138,8 +139,8 @@ bool searchWord(string path, string word) {
 			found = true;
 	}
 	wordsFile.close();
- 
-  return found;
+
+	return found;
 }
 
 int readWord(string& word, vector<Player>& players, int& index, int& passTurns, const string& dictionary) {
@@ -177,39 +178,24 @@ int readWord(string& word, vector<Player>& players, int& index, int& passTurns, 
 	cout << "Maximum number of attempts reached. You lost your turn!\n";
 	return 3;
 }
-void readDirection(char& direction) {
-	bool directionIsValid = false;
+bool readDirection() {
+	char direction;
 	while (true) {
 		string expectedValues = "vVhH";
 		cout << "Direction(H / V) : ";
 		cin >> direction;
-		if (valid("cin", "") && expectedValues.find(direction) != string::npos)
-			return;
+		if (valid("cin", "")) {
+			if (direction == 'v' || direction == 'V')
+				return true;
+			else if (direction == 'h' || direction == 'H')
+				return false;
+			/*if (expectedValues.find(direction)!=string::npos){
+				return (direction == 'v' || direction == 'V')}*/ //Como fica melhor?
+		}
 		else
 			cout << "The input must be H/h for horizontal or v/V for vertical!\n";
 	}
 }
-//void readPosition(char& row, char& col) {
-//	string rows = "ABCDEFGHIJKLM", cols = "abcdefghijklm";
-//	char sep;
-//	string line;
-//	while (true) {
-//		cout << "Position of 1st letter (ROW column): " << endl;
-//		getline(cin, line);
-//		if (valid("getline", "") && line.size() == 3) {
-//			if (line[1] == ' ') {
-//				row = line[0];
-//				col = line[2];
-//				if (rows.find(row) != string::npos && cols.find(col) != string::npos)
-//					return;
-//				cout << "Error. Example of valid input:\nA b" << endl;
-//			}
-//		}
-//		else {
-//			cout << "Error. Example of valid input:\nA b" << endl;
-//		}
-//	}
-//}
 void readPosition(char& row, char& col) {
 	char sep;
 	string line;
@@ -218,9 +204,9 @@ void readPosition(char& row, char& col) {
 		getline(cin, line);
 		if (valid("getline", "") && line.size() == 3) {
 			if (line[1] == ' ') {
-				row = line[0]-'A';
-				col = line[2]-'a';
-				if (0<=row && BOARD_SIZE > row && 0 <= col && BOARD_SIZE > col)
+				row = line[0] - 'A';
+				col = line[2] - 'a';
+				if (0 <= row && BOARD_SIZE > row && 0 <= col && BOARD_SIZE > col)
 					return;
 				cout << "Error. Example of valid input:\nA b" << endl;
 			}
@@ -230,23 +216,50 @@ void readPosition(char& row, char& col) {
 		}
 	}
 }
+vector<char> checkExistingLetters(string word, board_t& board, char& row, char& col, bool& isVertical, vector<char> rack, bool& validPosition) {
+	for (int i = 0; i < word.size(); i++)
+		word[i] = toupper(word[i]);
 
+	for (int i = 0; i < word.size(); i++) {
+		if (isVertical) {
+			if (word[i] != board[row + i][col].first) {
+				if (board[row + i][col].first == ' ') {
+					vector<char>::iterator pos = find(rack.begin(), rack.end(), word[i]);
+					if (pos != rack.end()) {
+						rack.erase(pos);
+					}
+					else {
+						validPosition = false;
+						break;
+					}
+				}
+				else {
+					validPosition = false;
+					break;
+				}
+			}
+		}
+	}
+	return rack;
+}
 
 
 int main() {
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
-	vector<char> bag; 
+	vector<char> bag;
 	vector<char> rack;
 	vector<Player> players;
 	int numPlayers;
 	int SCORE_MAX;
 	string dictionaryPath, trash;
+	bool validPosition = true; //feio aqui
+	vector<char> possibleRack; //same
 
 	initBoard(board, BOARD_SIZE);
 
 	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
 	ifstream extractFile("CONFIG.txt");
-	if (!extractFile.is_open()){
+	if (!extractFile.is_open()) {
 		cout << "File CONFIG.txt not found!" << endl;
 		exit(1);
 	}
@@ -286,7 +299,14 @@ int main() {
 		} //ainda vou melhorar estes ifs, mas parece-me mais limpinho que ontem ahah
 
 		readPosition(turn.row, turn.col);
-		readDirection(turn.direction);
+		turn.isVertical = readDirection();
+
+		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
+		if (validPosition) {
+			rack = possibleRack;
+		}
+
+		showRack(rack); //just for test
 	}
 	return 0;
 }

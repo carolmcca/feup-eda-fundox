@@ -15,7 +15,7 @@ typedef struct {
 	std::string word;
 	char row;
 	char col;
-	char direction;
+	bool isVertical;
 } Turn;
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
