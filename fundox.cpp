@@ -251,6 +251,70 @@ vector<char> checkExistingLetters(string word, board_t& board, char row, char co
 	}
 	return rack;
 }
+bool connectWords(board_t& board, const Turn& turn, const string path, Player& player) {
+	vector<Player**> changeColor;
+	string testedWord;
+	int perpendicularIndex, paralelIndex;
+	int initialParalelIndex, initialPerpendicularIndex;
+	int* row;
+	int* col;
+
+	if (turn.isVertical) {
+		initialParalelIndex = turn.row;
+		initialPerpendicularIndex = turn.col;
+		row = &paralelIndex;
+		col = &perpendicularIndex;
+	}
+	else {
+		initialParalelIndex = turn.col;
+		initialPerpendicularIndex = turn.row;
+		row = &perpendicularIndex;
+		col = &paralelIndex;
+	}
+
+
+	for (int i = 0; i < turn.word.length(); i++) {
+		perpendicularIndex = i;
+		paralelIndex = initialParalelIndex - 1;
+		while (paralelIndex >= 0) {
+			if (board[*row][*col].first != ' ') {
+				testedWord.push_back(board[*row][*col].first);
+				paralelIndex--; //calhou coco porque não tenho forma de saber qual é o perpendicular e o horizon
+				//ver cores (n tenho cabeça agora)
+			}
+			else {
+				break;
+			}
+		}
+		if (testedWord.length() != 0) {
+			reverse(testedWord.begin(), testedWord.end());
+		}
+		testedWord.push_back(turn.word[i]);
+		while (paralelIndex < BOARD_SIZE) {
+			if (board[*row][*col].first != ' ') {
+				testedWord.push_back(board[*row][*col].first);
+				paralelIndex++;
+				//ver cores (n tenho cabeça agora)
+			}
+			else {
+				break;
+			}
+		}
+		if (testedWord.length() > 0)
+			if (!searchWord(path, testedWord) || testedWord.size() == 1)
+				return false;
+
+		paralelIndex = initialParalelIndex;
+		for (int i = 0; i < turn.word.length(); i++) {
+			perpendicularIndex = initialPerpendicularIndex + i;
+
+			board[*row][*col].first = turn.word[i];
+			board[*row][*col].second = &player;
+		}
+
+		return true;
+	}
+}
 
 
 int main() {
@@ -315,7 +379,7 @@ int main() {
 		readDirection(turn);
 
 		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
-		if (validPosition) {
+		if (validPosition && connectWords(board, turn, dictionaryPath, players[current])) {
 			rack = possibleRack;
     }
 		showRack(rack); //just for test

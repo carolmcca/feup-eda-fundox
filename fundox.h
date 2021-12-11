@@ -38,6 +38,7 @@ bool searchWord(std::string path, std::string word);
 int readWord(std::string& word, Player& player, const std::string& dictionary);
 void readDirection(Turn& turn);
 void readPosition(Turn& turn);
+bool connectWords(board_t& board, const Turn& turn, const std::string path, Player& player);
 
 
 
