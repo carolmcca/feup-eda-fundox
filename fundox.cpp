@@ -5,8 +5,8 @@
 #include <utility>
 #include <string>
 #include <random>
-#include <algorithm>
 #include <time.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -82,13 +82,13 @@ void showRack(const vector<char>& rack) {
 
 bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n') {
 	if (cin.fail()) {
-		if (cin.eof()){
-      cin.clear();
-    }	
-    else{
-      cin.clear();
-      cin.ignore(1000, terminator);
-    }
+		if (cin.eof()) {
+			cin.clear();
+		}
+		else {
+			cin.clear();
+			cin.ignore(1000, terminator);
+		}
 	}
 	else if (inputType == "cin") {
 		bool correctTerminator = cin.peek() == terminator;
@@ -104,14 +104,14 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 }
 
 void readNumPlayers(int& numPlayers) {
-  int i = 0;
-	while (i<3) {
+	int i = 0;
+	while (i < 3) {
 		cout << "Please insert the number of players (2-4): ";
 		cin >> numPlayers;
 		if (valid("cin") && numPlayers >= 2 && numPlayers <= 4)
 			return;
 		cout << "The number must be an integer between 2 and 4!" << endl;
-    i++;
+		i++;
 	}
 }
 void readNamePlayers(vector<Player>& players, const int& index) {
@@ -132,16 +132,15 @@ void readNamePlayers(vector<Player>& players, const int& index) {
 bool searchWord(string path, string word) {
 	bool found = false;
 	ifstream wordsFile;
-  for (int i = 0; i < path.size(); i++) {
-    cout << (int)path[i] << endl;
-  }
-  cout << (path=="WORDS_EN.txt") << endl;
 	wordsFile.open(path);
 
 	if (!wordsFile.is_open()) {
 		cout << "Error! File '" << path << "' not found.\n";
 		exit(1);
 	}
+
+	for (int i = 0; i < word.length(); i++)
+		word[i] = tolower(word[i]);
 
 	while (!wordsFile.eof() && !found) {
 		string entry;
@@ -171,8 +170,6 @@ int readWord(string& word, Player& player, const string& dictionary) {
 				return 2;
 			}
 			else {
-				for (int i = 0; i < word.length(); i++)
-					word[i] = tolower(word[i]); //verificar ficheiro
 				if (!searchWord(dictionary, word)) {
 					attempts++;
 					cout << "The inserted word isn't in the dictionary, please insert a valid word.\n";
@@ -199,9 +196,9 @@ void readDirection(Turn& turn) {
 				turn.isVertical = false;
 				return;
 			}
-    }
+		}
 		cout << "The input must be H/h for horizontal or v/V for vertical!\n";
-  }
+	}
 }
 void readPosition(Turn& turn) {
 	char sep;
@@ -223,97 +220,113 @@ void readPosition(Turn& turn) {
 		}
 	}
 }
+
 vector<char> checkExistingLetters(string word, board_t& board, char row, char col, bool& isVertical, vector<char> rack, bool& validPosition) {
+	bool spaceExists = false;
 	for (int i = 0; i < word.size(); i++)
 		word[i] = toupper(word[i]);
 
 	for (int i = 0; i < word.size(); i++) {
-		if (isVertical)
-			row++;
-		else
-			col++;
+		if (row == BOARD_SIZE || col == BOARD_SIZE) {
+			cout << "Your word doesn't fit on the board. You lost your turn.\n";
+			validPosition = false;
+			break;
+		}
 		if (word[i] != board[row][col].first) {
 			if (board[row][col].first == ' ') {
 				vector<char>::iterator pos = find(rack.begin(), rack.end(), word[i]);
 				if (pos != rack.end()) {
+					spaceExists = true;
 					rack.erase(pos);
 				}
 				else {
+					cout << "You don't have enough letters on the rack. You lost your turn.\n";
 					validPosition = false;
 					break;
 				}
 			}
 			else {
+				cout << "Your word doesn't fit on the board. You lost your turn! - sobreposition\n";
 				validPosition = false;
 				break;
 			}
 		}
+		if (isVertical)
+			row++;
+		else
+			col++;
 	}
+	validPosition = (validPosition && spaceExists);
 	return rack;
+}
+
+void testHalfLine(int& perpendicularIndex, const int* row, const int* col, board_t& board, string& testedWord, vector<Player**> changeColor, bool changeWordColor, int step) {
+	while (perpendicularIndex >= 0 && perpendicularIndex < BOARD_SIZE && board[*row][*col].first != ' ') {
+		testedWord.push_back(board[*row][*col].first);
+		if (changeWordColor)
+			changeColor.push_back(&(board[*row][*col].second));
+		perpendicularIndex += step;
+	}
+}
+bool getLine(int& perpendicularIndex, const int* row, const int* col, board_t& board, const string wordPart, vector<Player**> changeColor, bool changeWordColor) {
+	string testedWord;
+	perpendicularIndex--;
+	testHalfLine(perpendicularIndex, row, col, board, testedWord, changeColor, changeWordColor, -1);
+	reverse(testedWord.begin(), testedWord.end());
+	cout << "1st half word: |" << testedWord << "|\n";
+	testedWord += wordPart;
+	cout << "with the word: |" << testedWord << "|\n";
+	perpendicularIndex += testedWord.length();
+	testHalfLine(perpendicularIndex, row, col, board, testedWord, changeColor, changeWordColor, 1);
+	cout << "complete tested word: |" << testedWord << "|\n";
+	return testedWord.length() == 1;
 }
 bool connectWords(board_t& board, const Turn& turn, const string path, Player& player) {
 	vector<Player**> changeColor;
 	string testedWord;
+	bool changeWordColor, isConnected = true;
 	int perpendicularIndex, paralelIndex;
 	int initialParalelIndex, initialPerpendicularIndex;
 	int* row;
 	int* col;
 
-	if (turn.isVertical) {
-		initialParalelIndex = turn.row;
-		initialPerpendicularIndex = turn.col;
-		row = &paralelIndex;
-		col = &perpendicularIndex;
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			if (board[i][j].first != ' ') {
+				isConnected = false;
+				break;
+			}
+		}
 	}
-	else {
+
+	if (turn.isVertical) {
 		initialParalelIndex = turn.col;
 		initialPerpendicularIndex = turn.row;
 		row = &perpendicularIndex;
 		col = &paralelIndex;
 	}
+	else {
+		initialParalelIndex = turn.row;
+		initialPerpendicularIndex = turn.col;
+		row = &paralelIndex;
+		col = &perpendicularIndex;
+	}
 
+	if (getLine(perpendicularIndex, row, col, board, turn.word, changeColor, true))
+		isConnected = true;
 
 	for (int i = 0; i < turn.word.length(); i++) {
 		perpendicularIndex = i;
-		paralelIndex = initialParalelIndex - 1;
-		while (paralelIndex >= 0) {
-			if (board[*row][*col].first != ' ') {
-				testedWord.push_back(board[*row][*col].first);
-				paralelIndex--; //calhou coco porque não tenho forma de saber qual é o perpendicular e o horizon
-				//ver cores (n tenho cabeça agora)
-			}
-			else {
-				break;
-			}
-		}
-		if (testedWord.length() != 0) {
-			reverse(testedWord.begin(), testedWord.end());
-		}
-		testedWord.push_back(turn.word[i]);
-		while (paralelIndex < BOARD_SIZE) {
-			if (board[*row][*col].first != ' ') {
-				testedWord.push_back(board[*row][*col].first);
-				paralelIndex++;
-				//ver cores (n tenho cabeça agora)
-			}
-			else {
-				break;
-			}
-		}
-		if (testedWord.length() > 0)
-			if (!searchWord(path, testedWord) || testedWord.size() == 1)
-				return false;
-
 		paralelIndex = initialParalelIndex;
-		for (int i = 0; i < turn.word.length(); i++) {
-			perpendicularIndex = initialPerpendicularIndex + i;
+		changeWordColor = board[*row][*col].first == ' ';
 
-			board[*row][*col].first = turn.word[i];
-			board[*row][*col].second = &player;
-		}
-
-		return true;
+		string letter = { turn.word[i] };
+		if (getLine(paralelIndex, row, col, board, letter, changeColor, changeWordColor))
+			isConnected = true;
 	}
+
+	cout << "isConected: " << isConnected << endl;
+	return isConnected;
 }
 
 
@@ -325,7 +338,6 @@ int main() {
 	int numPlayers;
 	int SCORE_MAX;
 	string dictionaryPath, trash;
-	bool validPosition = true; //feio aqui
 	vector<char> possibleRack; //same
 
 	initBoard(board, BOARD_SIZE);
@@ -363,25 +375,36 @@ int main() {
 		showRack(rack);
 
 		input = readWord(turn.word, players[current], dictionaryPath);
-		switch(input){
-      case 1:
-        passTurns++;
-        continue;
-      case 2:
-        players.erase(players.begin() + current); // Remove player
-				current = (current - 1) % players.size();
-        continue;
-      case 3:
-        passTurns = 0;
-    }
-      
+		switch (input) {
+		case 1:
+			passTurns++;
+			continue;
+		case 2:
+			players.erase(players.begin() + current); // Remove player
+			current = (current - 1) % players.size();
+			continue;
+		case 3:
+			passTurns = 0;
+		}
+
 		readPosition(turn);
 		readDirection(turn);
 
+		bool validPosition = true;
 		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
+		cout << "ValidPosition after mariana: " << validPosition << endl;
 		if (validPosition && connectWords(board, turn, dictionaryPath, players[current])) {
 			rack = possibleRack;
-    }
+			cout << "changed rack\n";
+			for (int i = 0; i < turn.word.length(); i++) {
+				if (turn.isVertical) {
+					board[turn.row + i][turn.col] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
+				}
+				else
+					board[turn.row][turn.col + i] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
+			}
+			cout << "inserted word\n";
+		}
 		showRack(rack); //just for test
 	}
 	return 0;
