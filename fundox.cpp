@@ -45,8 +45,7 @@ void showBoard(const board_t& board, const size_t boardSize) {
 	}
 }
 
-void setBag(ifstream& extractFile, vector<char>& bag)
-{
+void setBag(ifstream& extractFile, vector<char>& bag) {
 	char letter;
 	int num_occurences;
 
@@ -204,7 +203,7 @@ void readPosition(Turn& turn) {
 	char sep;
 	string line;
 	while (true) {
-		cout << "Position of 1st letter (ROW column): " << endl;
+		cout << "Position of 1st letter (ROW column): ";
 		getline(cin, line);
 		if (valid("getline") && line.size() == 3) {
 			if (line[1] == ' ') {
@@ -265,38 +264,35 @@ vector<char> checkExistingLetters(string word, board_t& board, int row, int col,
 	return rack;
 }
 
-void testHalfLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, string& testedWord, vector<Player**> changeColor, bool changeWordColor, int step) {
+void testHalfLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, string& testWord, vector<Player**> &changePlayer, bool changeColor, int step) {
 	while (perpendicularIndex >= 0 && perpendicularIndex < BOARD_SIZE) {
-		cout << "testHaf\n";
-		cout << "perpendicularIndex = " << perpendicularIndex << endl;
-		cout << "row: " << *row << " col: " << *col << endl;
 		if (board[*row][*col].first == ' ') {
 			break;
 		}
 		else {
-		testedWord.push_back(board[*row][*col].first);
-		if (changeWordColor)
-			changeColor.push_back(&(board[*row][*col].second));
-		perpendicularIndex += step;
+			testWord.push_back(board[*row][*col].first);
+			if (changeColor)
+				changePlayer.push_back(&(board[*row][*col].second));
+			perpendicularIndex += step;
 		}
 	}
 }
-bool getLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, const string wordPart, vector<Player**> changeColor, bool changeWordColor) {
-	string testedWord;
+string getLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, const string wordPart, vector<Player**> &changePlayer, bool changeColor) {
+	string testWord;
 	perpendicularIndex--;
-	testHalfLine(perpendicularIndex, row, col, board, testedWord, changeColor, changeWordColor, -1);
-	if (testedWord.length()!=0)
-		reverse(testedWord.begin(), testedWord.end());
-	testedWord += wordPart;
-	perpendicularIndex += testedWord.length() + 1;
-	testHalfLine(perpendicularIndex, row, col, board, testedWord, changeColor, changeWordColor, 1);
-	cout << "testedWord |" << testedWord << "|\n";
-	return testedWord.length() == 1;
+	testHalfLine(perpendicularIndex, row, col, board, testWord, changePlayer, changeColor, -1);
+	if (testWord.length()!=0)
+		reverse(testWord.begin(), testWord.end());
+	testWord += wordPart;
+	perpendicularIndex += testWord.length() + 1;
+	testHalfLine(perpendicularIndex, row, col, board, testWord, changePlayer, changeColor, 1);
+	return testWord;
 }
-bool connectWords(board_t& board, const Turn& turn, const string path, Player& player) {
-	vector<Player**> changeColor;
-	string testedWord;
-	bool changeWordColor, isConnected = true;
+
+bool connectWords(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**> &changePlayer) {
+	changePlayer.clear();
+	string testWord;
+	bool changeColor, isConnected = true;
 	int perpendicularIndex, paralelIndex;
 	int initialParalelIndex, initialPerpendicularIndex;
 	int* row;
@@ -327,20 +323,27 @@ bool connectWords(board_t& board, const Turn& turn, const string path, Player& p
 
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
-	if (getLine(initialPerpendicularIndex, row, col, board, turn.word, changeColor, true)) {
+	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
+	if (testWord.length() > turn.word.length()){
 		isConnected = true;
+		if (!searchWord(path, testWord))
+			return false;
 	}
 
 	for (int i = 0; i < turn.word.length(); i++) {
 		perpendicularIndex = initialPerpendicularIndex + i;
 		paralelIndex = initialParalelIndex;
-		changeWordColor = board[*row][*col].first == ' ';
+		changeColor = board[*row][*col].first == ' ';
 
 		string letter = { turn.word[i] };
-		if (getLine(paralelIndex, col, row, board, letter, changeColor, changeWordColor)) {
+		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
+		if (testWord.length() > 1) {
 			isConnected = true;
+			if (!searchWord(path, testWord))
+				return false;
 		}
 	}
+
 	return isConnected;
 }
 
@@ -354,6 +357,7 @@ int main() {
 	int SCORE_MAX;
 	string dictionaryPath, trash;
 	vector<char> possibleRack; //same
+	vector<Player**> changePlayer;
 
 	initBoard(board, BOARD_SIZE);
 
@@ -395,7 +399,8 @@ int main() {
 			continue;
 		case 2:
 			players.erase(players.begin() + current); // Remove player
-			current = (current - 1) % players.size();
+			numPlayers--;
+			current = (current - 1 + numPlayers) % numPlayers;
 			continue;
 		case 3:
 			passTurns = 0;
@@ -406,15 +411,16 @@ int main() {
 
 		bool validPosition = true;
 		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
-		if (validPosition && connectWords(board, turn, dictionaryPath, players[current])) {
+		if (validPosition && connectWords(board, turn, dictionaryPath, players[current], changePlayer)) {
 			rack = possibleRack;
 			for (int i = 0; i < turn.word.length(); i++) {
-				if (turn.isVertical) {
+				if (turn.isVertical)
 					board[turn.row + i][turn.col] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
-				}
 				else
 					board[turn.row][turn.col + i] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
 			}
+			for (int i = 0; i < changePlayer.size(); i++)
+				*(changePlayer[i]) = &players[current];
 		}
 		showRack(rack); //just for test
 	}
