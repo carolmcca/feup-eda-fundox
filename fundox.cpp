@@ -230,21 +230,25 @@ void readPosition(Turn& turn) {
 	}
 }
 
-vector<char> checkExistingLetters(string word, board_t& board, int row, int col, bool& isVertical, vector<char> rack, bool& validPosition) {
+vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool isFirstWord) {
 	bool spaceExists = false;
-	for (int i = 0; i < word.size(); i++)
-		word[i] = toupper(word[i]);
+	bool isConnected = isFirstWord;
+	int row = turn.row;
+	int col = turn.col;
 
-	for (int i = 0; i < word.size(); i++) {
-		if (row == BOARD_SIZE || col == BOARD_SIZE) {
+	for (int i = 0; i < turn.word.size(); i++)
+		turn.word[i] = toupper(turn.word[i]);
+
+	for (int i = 0; i < turn.word.size(); i++) {
+		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) {
 			cout << "Your word doesn't fit on the board. You lost your turn.\n";
 			validPosition = false;
 			break;
 		}
 
-		if (word[i] != board[row][col].first) {
+		if (turn.word[i] != board[row][col].first) {
 			if (board[row][col].first == ' ') {
-				vector<char>::iterator pos = find(rack.begin(), rack.end(), word[i]);
+				vector<char>::iterator pos = find(rack.begin(), rack.end(), turn.word[i]);
 				if (pos != rack.end()) {
 					spaceExists = true;
 					rack.erase(pos);
@@ -261,12 +265,15 @@ vector<char> checkExistingLetters(string word, board_t& board, int row, int col,
 				break;
 			}
 		}
-		if (isVertical)
+		else {
+			isConnected = true;
+		}
+		if (turn.isVertical)
 			row++;
 		else
 			col++;
 	}
-	validPosition = (validPosition && spaceExists);
+	validPosition = (validPosition && spaceExists && isConnected);
 	return rack;
 }
 
@@ -295,23 +302,14 @@ string getLine(int& index, int* &row, int* &col, board_t& board, const string wo
 	return testWord;
 }
 
-bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**> &changePlayer) {
+bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**> &changePlayer, bool isFirstWord) {
 	changePlayer.clear();
 	string testWord;
-	bool changeColor, isConnected = true;
+	bool changeColor;
 	int perpendicularIndex, paralelIndex;
 	int initialParalelIndex, initialPerpendicularIndex;
 	int* row;
 	int* col;
-
-	for (int i = 0; i < BOARD_SIZE; i++) {
-		for (int j = 0; j < BOARD_SIZE; j++) {
-			if (board[i][j].first != ' ') {
-				isConnected = false;
-				break;
-			}
-		}
-	}
 
 	if (turn.isVertical) {
 		initialPerpendicularIndex = turn.row;
@@ -330,11 +328,8 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
-	if (testWord.length() > turn.word.length()){
-		isConnected = true;
-		if (!searchWord(path, testWord))
-			return false;
-	}
+	if (!searchWord(path, testWord))
+		return false;
 
 	for (int i = 0; i < turn.word.length(); i++) {
 		perpendicularIndex = initialPerpendicularIndex + i;
@@ -344,13 +339,12 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 		string letter = { turn.word[i] };
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
 		if (testWord.length() > 1) {
-			isConnected = true;
 			if (!searchWord(path, testWord))
 				return false;
 		}
 	}
 
-	return isConnected;
+	return true;
 }
 
 
@@ -364,6 +358,7 @@ int main() {
 	string dictionaryPath, trash;
 	vector<char> possibleRack; //same
 	vector<Player**> changePlayer;
+	bool isFirstWord = true;
 
 	initBoard(board, BOARD_SIZE);
 
@@ -420,8 +415,9 @@ int main() {
 		readDirection(turn);
 
 		bool validPosition = true;
-		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
-		if (validPosition && checkWordPlacement(board, turn, dictionaryPath, players[current], changePlayer)) {
+		possibleRack = checkExistingLetters(board, turn, rack, validPosition, isFirstWord);
+		if (validPosition && checkWordPlacement(board, turn, dictionaryPath, players[current], changePlayer, isFirstWord)) {
+			isFirstWord = false;
 			rack = possibleRack;
 			for (int i = 0; i < turn.word.length(); i++) {
 				if (turn.isVertical)
