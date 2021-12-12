@@ -158,7 +158,7 @@ bool searchWord(string path, string word) {
 	return found;
 }
 
-int readWord(string& word, Player& player, const string& dictionary) {
+TurnPlay readWord(string& word, Player& player, const string& dictionary) {
 	cout << player.color << player.name << "'s turn" << dfltColor << endl;
 	int attempts = 0;
 	while (attempts < NUM_MAX_ATTEMPTS) {
@@ -169,10 +169,10 @@ int readWord(string& word, Player& player, const string& dictionary) {
 		}
 		else {
 			if (word == "P") {
-				return 1;
+				return PASS;
 			}
 			else if (word == "G") {
-				return 2;
+				return GIVEUP;
 			}
 			else {
 				if (!searchWord(dictionary, word)) {
@@ -180,12 +180,12 @@ int readWord(string& word, Player& player, const string& dictionary) {
 					cout << "The inserted word isn't in the dictionary, please insert a valid word.\n";
 				}
 				else
-					return 3;
+					return PLAY;
 			}
 		}
 	}
 	cout << "Maximum number of attempts reached. You lost your turn!\n";
-	return 1;
+	return PASS;
 }
 void readDirection(Turn& turn) {
 	char direction;
@@ -295,7 +295,7 @@ string getLine(int& index, int* &row, int* &col, board_t& board, const string wo
 	return testWord;
 }
 
-bool connectWords(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**> &changePlayer) {
+bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**> &changePlayer) {
 	changePlayer.clear();
 	string testWord;
 	bool changeColor, isConnected = true;
@@ -390,7 +390,7 @@ int main() {
 	}
 
 	int current = numPlayers - 1;
-	int passTurns = 0, passRounds = 0, input;
+	int passTurns = 0, passRounds = 0;
 	Turn turn;
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
@@ -399,21 +399,21 @@ int main() {
 		showBoard(board, BOARD_SIZE);
 		showRack(rack);
 
-		input = readWord(turn.word, players[current], dictionaryPath);
+		TurnPlay input = readWord(turn.word, players[current], dictionaryPath);
 		switch (input) {
-		case 1:
-			passRounds = (passTurns+1)/numPlayers;
-			passTurns = (passTurns+1)%numPlayers;
-			continue;
-		case 2:
-			players.erase(players.begin() + current); // Remove player
-			numPlayers--;
-			passRounds = passTurns/numPlayers;
-			current = (current - 1 + numPlayers) % numPlayers;
-			continue;
-		case 3:
-			passTurns = 0;
-			passRounds = 0;
+			case PASS:
+				passRounds = (passTurns+1)/numPlayers;
+				passTurns = (passTurns+1)%numPlayers;
+				continue;
+			case GIVEUP:
+				players.erase(players.begin() + current); // Remove player
+				numPlayers--;
+				passRounds = passTurns/numPlayers;
+				current = (current - 1 + numPlayers) % numPlayers;
+				continue;
+			case PLAY:
+				passTurns = 0;
+				passRounds = 0;
 		}
 
 		readPosition(turn);
@@ -421,7 +421,7 @@ int main() {
 
 		bool validPosition = true;
 		possibleRack = checkExistingLetters(turn.word, board, turn.row, turn.col, turn.isVertical, rack, validPosition);
-		if (validPosition && connectWords(board, turn, dictionaryPath, players[current], changePlayer)) {
+		if (validPosition && checkWordPlacement(board, turn, dictionaryPath, players[current], changePlayer)) {
 			rack = possibleRack;
 			for (int i = 0; i < turn.word.length(); i++) {
 				if (turn.isVertical)
