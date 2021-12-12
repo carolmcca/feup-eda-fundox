@@ -23,20 +23,20 @@ const vector<string> colors = { red, blue, green, magenta };
 const int NUM_MAX_ATTEMPTS = 3;
 const size_t BOARD_SIZE = 13;
 
-void initBoard(board_t& board, const size_t boardSize) {
-	for (int i = 0; i < boardSize; i++) {
-		for (int j = 0; j < boardSize; j++) {
+void initBoard(board_t& board) {
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
 			board[i][j].first = ' ';
 			board[i][j].second = nullptr;
 		}
 	}
 }
-void showBoard(const board_t& board, const size_t boardSize) {
+void showBoard(const board_t& board) {
 	string letters = "ABCDEFGHIJKLM";
 	cout << "\n    a b c d e f g h i j k l m" << endl;
-	for (int i = 0; i < boardSize; i++) {
+	for (int i = 0; i < BOARD_SIZE; i++) {
 		cout << " " << letters[i] << " " << bgGrey << " ";
-		for (int j = 0; j < boardSize; j++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (board[i][j].second != nullptr)
 				cout << board[i][j].second->color;
 			cout << board[i][j].first << " ";
@@ -213,12 +213,8 @@ void readPosition(Turn& turn) {
 		getline(cin, line);
 		if (valid("getline") && line.size() == 3) {
 			if (line[1] == ' ') {
-				cout << "line[0] = " << line[0] << endl;
 				turn.row = int(line[0] - 'A');
-				cout << "turn.row = " << turn.row << endl;
-				cout << "line[2] = " << line[2] << endl;
 				turn.col = int(line[2] - 'a');
-				cout << "turn.col = " << turn.col << endl;
 				if (0 <= turn.row && BOARD_SIZE > turn.row && 0 <= turn.col && BOARD_SIZE > turn.col)
 					return;
 				cout << "Error. Example of valid input:\nA b" << endl;
@@ -360,7 +356,7 @@ int main() {
 	vector<Player**> changePlayer;
 	bool isFirstWord = true;
 
-	initBoard(board, BOARD_SIZE);
+	initBoard(board);
 
 	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
 	ifstream extractFile("CONFIG.txt");
@@ -391,7 +387,7 @@ int main() {
 		current = (current + 1) % numPlayers;
 		bool restoreRack = (passRounds > 0 && passTurns == 0);
 		setRack(bag, rack, restoreRack);
-		showBoard(board, BOARD_SIZE);
+		showBoard(board);
 		showRack(rack);
 
 		TurnPlay input = readWord(turn.word, players[current], dictionaryPath);
