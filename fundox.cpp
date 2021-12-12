@@ -60,14 +60,20 @@ void setBag(ifstream& extractFile, vector<char>& bag) {
 	shuffle(bag.begin(), bag.end(), g);
 }
 
-void setRack(vector<char>& bag, vector<char>& rack) {
-	int i;
-	const int RACK_SIZE = rack.size();
-	for (i = 0; i < 7 - RACK_SIZE; i++) {
-		rack.push_back(bag[bag.size() - i - 1]);
+void setRack(vector<char>& bag, vector<char>& rack, bool restore) {
+	if (restore) {
+		while (!rack.empty()) {
+			char letter = *rack.rbegin();
+			rack.pop_back();
+			bag.insert(bag.begin() + (rand()%bag.size()), letter);
+		}
+	}
+
+	while (rack.size() < 7 && !bag.empty()) {
+		rack.push_back(*bag.rbegin());
+		bag.pop_back();
 	}
 	sort(rack.begin(), rack.end());
-	bag.resize(bag.size() - i);
 }
 void showRack(const vector<char>& rack) {
 	cout << endl;
@@ -264,8 +270,8 @@ vector<char> checkExistingLetters(string word, board_t& board, int row, int col,
 	return rack;
 }
 
-void testHalfLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, string& testWord, vector<Player**> &changePlayer, bool changeColor, int step) {
-	while (perpendicularIndex >= 0 && perpendicularIndex < BOARD_SIZE) {
+void getHalfLine(int& index, int* &row, int* &col, board_t& board, string& testWord, vector<Player**> &changePlayer, bool changeColor, int step) {
+	while (index >= 0 && index < BOARD_SIZE) {
 		if (board[*row][*col].first == ' ') {
 			break;
 		}
@@ -273,19 +279,19 @@ void testHalfLine(int& perpendicularIndex, int* &row, int* &col, board_t& board,
 			testWord.push_back(board[*row][*col].first);
 			if (changeColor)
 				changePlayer.push_back(&(board[*row][*col].second));
-			perpendicularIndex += step;
+			index += step;
 		}
 	}
 }
-string getLine(int& perpendicularIndex, int* &row, int* &col, board_t& board, const string wordPart, vector<Player**> &changePlayer, bool changeColor) {
+string getLine(int& index, int* &row, int* &col, board_t& board, const string wordPart, vector<Player**> &changePlayer, bool changeColor) {
 	string testWord;
-	perpendicularIndex--;
-	testHalfLine(perpendicularIndex, row, col, board, testWord, changePlayer, changeColor, -1);
+	index--;
+	getHalfLine(index, row, col, board, testWord, changePlayer, changeColor, -1);
 	if (testWord.length()!=0)
 		reverse(testWord.begin(), testWord.end());
 	testWord += wordPart;
-	perpendicularIndex += testWord.length() + 1;
-	testHalfLine(perpendicularIndex, row, col, board, testWord, changePlayer, changeColor, 1);
+	index += testWord.length() + 1;
+	getHalfLine(index, row, col, board, testWord, changePlayer, changeColor, 1);
 	return testWord;
 }
 
@@ -384,26 +390,30 @@ int main() {
 	}
 
 	int current = numPlayers - 1;
-	int passTurns = 0, input;
+	int passTurns = 0, passRounds = 0, input;
 	Turn turn;
-	while (players[current].score < SCORE_MAX && passTurns / numPlayers < 3 && numPlayers > 1) {
+	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % numPlayers;
-		setRack(bag, rack);
+		bool restoreRack = (passRounds > 0 && passTurns == 0);
+		setRack(bag, rack, restoreRack);
 		showBoard(board, BOARD_SIZE);
 		showRack(rack);
 
 		input = readWord(turn.word, players[current], dictionaryPath);
 		switch (input) {
 		case 1:
-			passTurns++;
+			passRounds = (passTurns+1)/numPlayers;
+			passTurns = (passTurns+1)%numPlayers;
 			continue;
 		case 2:
 			players.erase(players.begin() + current); // Remove player
 			numPlayers--;
+			passRounds = passTurns/numPlayers;
 			current = (current - 1 + numPlayers) % numPlayers;
 			continue;
 		case 3:
 			passTurns = 0;
+			passRounds = 0;
 		}
 
 		readPosition(turn);

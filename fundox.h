@@ -26,7 +26,7 @@ typedef enum {
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
 
-void initBoard(board_t& board, const size_t boardSize);
+/*void initBoard(board_t& board, const size_t boardSize);
 void showBoard(const board_t& board, const size_t boardSize);
 
 void setBag(std::ifstream& extractFile, std::vector<char>& bag);
@@ -49,7 +49,7 @@ void readPosition(Turn& turn);
 void getHalfLine(int& index, int* &row, int* &col, board_t& board, std::string& testWord, std::vector<Player**> &changePlayer, bool changeColor, int step);
 std::string getLine(int& index, int* &row, int* &col, board_t& board, const std::string wordPart, std::vector<Player**> &changePlayer, bool changeColor);
 bool checkWordPlacement(board_t& board, const Turn& turn, const std::string path, Player& player, std::vector<Player**> &changePlayer);
-
+*/
 
 
 
