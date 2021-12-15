@@ -7,6 +7,7 @@
 #include <random>
 #include <time.h>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -168,10 +169,10 @@ TurnPlay readWord(string& word, Player& player, const string& dictionary) {
 			attempts++;
 		}
 		else {
-			if (word == "P") {
+			if (word == "P" || word == "p") {
 				return PASS;
 			}
-			else if (word == "G") {
+			else if (word == "G" || word == "g") {
 				return GIVEUP;
 			}
 			else {
@@ -238,6 +239,7 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 
 	for (int i = 0; i < turn.word.size(); i++) {
 		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) { //the word get's out of the board limits
+			cout << "Your word doesn't fit on the board. You lost your turn.\n";
 			validPosition = false;
 			break;
 		}
@@ -250,11 +252,13 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 					rack.erase(pos);
 				}
 				else { //the char isn't on the rack - invalid choice of word
+					cout << "You don't have enough letters to write your word. You lost your turn.\n";
 					validPosition = false;
 					break;
 				}
 			}
 			else { //the board already as another char on the position beeing tested - invalid placement of word
+				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				validPosition = false;
 				break;
 			}
@@ -324,8 +328,10 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
-	if (!searchWord(path, testWord))
+	if (!searchWord(path, testWord)) {
+		cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 		return false;
+	}
 
 	for (int i = 0; i < turn.word.length(); i++) {
 		perpendicularIndex = initialPerpendicularIndex + i;
@@ -335,8 +341,10 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 		string letter = { turn.word[i] };
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
 		if (testWord.length() > 1) {
-			if (!searchWord(path, testWord))
+			if (!searchWord(path, testWord)) {
+				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				return false;
+			}
 		}
 	}
 
@@ -355,7 +363,9 @@ void updateScores(board_t& board, vector<Player>& players) {
 	}
 }
 void showScores(const vector<Player>& players) {
+	cout << endl << setw(BOARD_SIZE - 2) << " ";
 	cout << "SCORE BOARD" << endl;
+	cout << setw(BOARD_SIZE - players.size() + 4) << " ";
 	for (int i = 0; i < players.size(); i++) {
 		cout << players[i].color << players[i].score << " ";
 	}
@@ -407,12 +417,7 @@ int main() {
 		current = (current + 1) % INITIAL_NUM_PLAYERS;
 		if (find(gaveUp.begin(), gaveUp.end(), current) == gaveUp.end()) {
 
-
 			bool restoreRack = (passRounds > 0 && passTurns == 0);
-
-			cout << "passTurns = " << passTurns << endl;
-			cout << "passRounds = " << passRounds << endl;
-
 			showScores(players);
 			setRack(bag, rack, restoreRack);
 			showBoard(board);
@@ -421,7 +426,6 @@ int main() {
 			TurnPlay input = readWord(turn.word, players[current], dictionaryPath);
 			switch (input) {
 			case PASS:
-				cout << "passed\n";
 				passRounds += (passTurns + 1) / numPlayers;
 				passTurns = (passTurns + 1) % numPlayers;
 				continue;
@@ -450,9 +454,6 @@ int main() {
 				}
 				for (int i = 0; i < changePlayer.size(); i++)
 					*changePlayer[i] = &players[current];
-			}
-			else {
-				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 			}
 			showRack(rack); //just for test
 			updateScores(board, players);
