@@ -460,6 +460,10 @@ int main() {
 				for (int i = 0; i < changePlayer.size(); i++)
 					*changePlayer[i] = &players[current];
 			}
+			else {
+				passTurns++;
+				continue;
+			}
 			updateScores(board, players);
 		}
 	}
