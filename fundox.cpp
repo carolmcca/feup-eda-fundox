@@ -110,14 +110,12 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 }
 
 void readNumPlayers(int& numPlayers) {
-	int i = 0;
-	while (i < 3) {
+	while (true) {
 		cout << "Please insert the number of players (2-4): ";
 		cin >> numPlayers;
 		if (valid("cin") && numPlayers >= 2 && numPlayers <= 4)
 			return;
 		cout << "The number must be an integer between 2 and 4!" << endl;
-		i++;
 	}
 }
 void readNamePlayers(vector<Player>& players, const int& index) {
@@ -372,6 +370,7 @@ void showScores(const vector<Player>& players) {
 	cout << dfltColor << endl;
 }
 
+
 int main() {
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
 	vector<char> bag;
@@ -455,11 +454,20 @@ int main() {
 				for (int i = 0; i < changePlayer.size(); i++)
 					*changePlayer[i] = &players[current];
 			}
-			showRack(rack); //just for test
 			updateScores(board, players);
 		}
 	}
-	cout << "\nGAME OVER\n";
+	showBoard(board);
+	int maxScore = -1;
+	Player* winnerPointer = nullptr;
+	for (int i = 0; i < players.size(); i++) {
+		if (find(gaveUp.begin(), gaveUp.end(), i) == gaveUp.end()) {
+			if (players[i].score > maxScore) {
+				winnerPointer = &players[i];
+			}
+		}
+	}
+	cout << endl << winnerPointer->color << winnerPointer->name << " WON!" << dfltColor << endl;
 	return 0;
 }
 
