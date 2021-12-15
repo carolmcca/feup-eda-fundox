@@ -226,9 +226,8 @@ void readPosition(Turn& turn) {
 	}
 }
 
-vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool isFirstWord) {
+vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool &isConnected) {
 	bool spaceExists = false;
-	bool isConnected = isFirstWord;
 	int row = turn.row;
 	int col = turn.col;
 
@@ -269,7 +268,7 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		else
 			col++;
 	}
-	validPosition = (validPosition && spaceExists && isConnected);
+	validPosition = (validPosition && spaceExists);
 	return rack;
 }
 
@@ -300,7 +299,7 @@ string getLine(int& index, int*& row, int*& col, board_t& board, const string wo
 	return testWord;
 }
 
-bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**>& changePlayer, bool isFirstWord) {
+bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**>& changePlayer, bool &isConnected) {
 	changePlayer.clear();
 	string testWord;
 	bool changeColor;
@@ -326,10 +325,13 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
+	cout << "same diection testWord: " << testWord << endl;
 	if (!searchWord(path, testWord)) {
 		cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 		return false;
 	}
+	if (testWord.length() > turn.word.length())
+		isConnected = true;
 
 	for (int i = 0; i < turn.word.length(); i++) {
 		perpendicularIndex = initialPerpendicularIndex + i;
@@ -338,14 +340,17 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 
 		string letter = { turn.word[i] };
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
+		cout << "other direction testWOED: " << testWord << endl;
 		if (testWord.length() > 1) {
 			if (!searchWord(path, testWord)) {
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				return false;
 			}
+			isConnected = true;
 		}
 	}
-
+	if (!isConnected)
+		cout << "You inserted an isolated word. You lost your turn.\n";
 	return true;
 }
 
@@ -441,8 +446,9 @@ int main() {
 			readDirection(turn);
 
 			bool validPosition = true;
-			possibleRack = checkExistingLetters(board, turn, rack, validPosition, isFirstWord);
-			if (validPosition && checkWordPlacement(board, turn, dictionaryPath, players[current], changePlayer, isFirstWord)) {
+			bool isConnected = isFirstWord;
+			possibleRack = checkExistingLetters(board, turn, rack, validPosition, isConnected);
+			if (validPosition && checkWordPlacement(board, turn, dictionaryPath, players[current], changePlayer, isConnected) && isConnected) {
 				isFirstWord = false;
 				rack = possibleRack;
 				for (int i = 0; i < turn.word.length(); i++) {
