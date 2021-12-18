@@ -9,6 +9,7 @@ typedef struct {
 	std::string name;
 	std::string color;
 	int score;
+	bool gaveUp;
 } Player;
 
 typedef struct {

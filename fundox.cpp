@@ -109,6 +109,23 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 	return false;
 }
 
+void readConfig(int &scoreMax, string &dictionaryPath, vector<char> &bag) {
+	string trash;
+	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
+	ifstream extractFile("CONFIG.txt");
+	if (!extractFile.is_open()) {
+		cout << "File CONFIG.txt not found!" << endl;
+		exit(1);
+	}
+	extractFile.ignore(14);
+	extractFile >> scoreMax;
+	extractFile.ignore(14);
+	getline(extractFile, dictionaryPath);
+	getline(extractFile, trash);
+
+	setBag(extractFile, bag);
+}
+
 void readNumPlayers(int& numPlayers) {
 	while (true) {
 		cout << "Please insert the number of players (2-4): ";
@@ -118,7 +135,7 @@ void readNumPlayers(int& numPlayers) {
 		cout << "The number must be an integer between 2 and 4!" << endl;
 	}
 }
-void readNamePlayers(vector<Player>& players, const int& index) {
+void readNamePlayer(vector<Player>& players, const int& index) {
 	while (true) {
 		cout << colors[index] << "Player " << index + 1 << ": ";
 		getline(cin, players[index].name); //fiz getline para poder ser mais que um nome (suposto?)
@@ -133,7 +150,7 @@ void readNamePlayers(vector<Player>& players, const int& index) {
 	}
 }
 
-bool searchWord(string path, string word) {
+bool searchWord(const string &path, string word) {
 	bool found = false;
 	ifstream wordsFile;
 	wordsFile.open(path);
@@ -157,7 +174,7 @@ bool searchWord(string path, string word) {
 	return found;
 }
 
-TurnPlay readWord(string& word, Player& player, const string& dictionary) {
+TurnPlay readWord(string& word,const Player& player, const string& dictionary) {
 	cout << player.color << player.name << "'s turn" << dfltColor << endl;
 	int attempts = 0;
 	while (attempts < NUM_MAX_ATTEMPTS) {
@@ -379,38 +396,26 @@ void showScores(const vector<Player>& players) {
 int main() {
 	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
 	vector<char> bag;
-	vector<char> rack;
+	vector<char> rack, possibleRack;
 	vector<Player> players;
 	int INITIAL_NUM_PLAYERS, numPlayers;
 	int SCORE_MAX;
-	string dictionaryPath, trash;
-	vector<char> possibleRack; //same
+	string dictionaryPath;
 	vector<Player**> changePlayer;
 	bool isFirstWord = true;
-	vector<int> gaveUp;
+
+	readConfig(SCORE_MAX, dictionaryPath, bag);
 
 	initBoard(board);
-
-	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
-	ifstream extractFile("CONFIG.txt");
-	if (!extractFile.is_open()) {
-		cout << "File CONFIG.txt not found!" << endl;
-		exit(1);
-	}
-	extractFile.ignore(14);
-	extractFile >> SCORE_MAX;
-	extractFile.ignore(14);
-	getline(extractFile, dictionaryPath);
-	getline(extractFile, trash);
-
-	setBag(extractFile, bag);
 
 	readNumPlayers(INITIAL_NUM_PLAYERS);
 	players.resize(INITIAL_NUM_PLAYERS);
 
 	for (int i = 0; i < INITIAL_NUM_PLAYERS; i++) {
-		readNamePlayers(players, i);
+		readNamePlayer(players, i);
 		players[i].color = colors[i];
+		players[i].score = 0;
+		players[i].gaveUp = false;
 	}
 
 	numPlayers = INITIAL_NUM_PLAYERS;
@@ -419,11 +424,11 @@ int main() {
 	Turn turn;
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % INITIAL_NUM_PLAYERS;
-		if (find(gaveUp.begin(), gaveUp.end(), current) == gaveUp.end()) {
+		if (!players[current].gaveUp) {
 
 			bool restoreRack = (passRounds > 0 && passTurns == 0);
-			showScores(players);
 			setRack(bag, rack, restoreRack);
+			showScores(players);
 			showBoard(board);
 			showRack(rack);
 
@@ -436,7 +441,7 @@ int main() {
 			case GIVEUP:
 				numPlayers--;
 				passRounds += passTurns / numPlayers;
-				gaveUp.push_back(current);
+				players[current].gaveUp = true;
 				continue;
 			case PLAY:
 				passTurns = 0;
@@ -452,32 +457,35 @@ int main() {
 				isFirstWord = false;
 				rack = possibleRack;
 				for (int i = 0; i < turn.word.length(); i++) {
+					pair<char, Player*> entry = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
 					if (turn.isVertical)
-						board[turn.row + i][turn.col] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
+						board[turn.row + i][turn.col] = entry;
 					else
-						board[turn.row][turn.col + i] = pair<char, Player*>(toupper(turn.word[i]), &players[current]);
+						board[turn.row][turn.col + i] = entry;
 				}
 				for (int i = 0; i < changePlayer.size(); i++)
 					*changePlayer[i] = &players[current];
+				
+				updateScores(board, players);
 			}
 			else {
 				passTurns++;
-				continue;
 			}
-			updateScores(board, players);
 		}
 	}
+
 	showBoard(board);
 	int maxScore = -1;
-	Player* winnerPointer = nullptr;
+	Player* winnerPlayer = nullptr;
 	for (int i = 0; i < players.size(); i++) {
-		if (find(gaveUp.begin(), gaveUp.end(), i) == gaveUp.end()) {
+		if (!players[current].gaveUp) {
 			if (players[i].score > maxScore) {
-				winnerPointer = &players[i];
+				maxScore = players[i].score;
+				winnerPlayer = &players[i];
 			}
 		}
 	}
-	cout << endl << winnerPointer->color << winnerPointer->name << " WON!" << dfltColor << endl;
+	cout << endl << winnerPlayer->color << winnerPlayer->name << " WON!" << dfltColor << endl;
 	return 0;
 }
 
