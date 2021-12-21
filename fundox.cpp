@@ -66,6 +66,7 @@ void setRack(vector<char>& bag, vector<char>& rack, bool restore) {
 		while (!rack.empty()) {
 			char letter = *rack.rbegin();
 			rack.pop_back();
+			//insert the letter extracted from the rack in a random position of the bag
 			bag.insert(bag.begin() + (rand() % bag.size()), letter);
 		}
 	}
@@ -111,18 +112,17 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 
 void readConfig(int &scoreMax, string &dictionaryPath, vector<char> &bag) {
 	string trash;
-	// Extract maximum score and dictionary's path from file "CONFIG.txt" 
+	 
 	ifstream extractFile("CONFIG.txt");
 	if (!extractFile.is_open()) {
 		cout << "File CONFIG.txt not found!" << endl;
 		exit(1);
 	}
-	extractFile.ignore(14);
+	extractFile.ignore(1000, ':');
 	extractFile >> scoreMax;
-	extractFile.ignore(14);
-	getline(extractFile, dictionaryPath);
-	getline(extractFile, trash);
-
+	extractFile.ignore(1000, ':');
+	extractFile >> dictionaryPath;
+	extractFile.ignore(1000, ':');
 	setBag(extractFile, bag);
 }
 
@@ -244,7 +244,7 @@ void readPosition(Turn& turn) {
 }
 
 vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool &isConnected) {
-	bool spaceExists = false;
+	bool spaceExists = false; // dictates whether or not the word is new 
 	int row = turn.row;
 	int col = turn.col;
 
@@ -252,32 +252,40 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		turn.word[i] = toupper(turn.word[i]);
 
 	for (int i = 0; i < turn.word.size(); i++) {
-		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) { //the word get's out of the board limits
+		//the cicle it's broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
+		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) {
+			//the word get's out of the board limits
 			cout << "Your word doesn't fit on the board. You lost your turn.\n";
 			validPosition = false;
 			break;
 		}
 
-		if (turn.word[i] != board[row][col].first) { //the char to be inserted is different from the one in the board
-			if (board[row][col].first == ' ') { //the position is free to recieve the char
+		if (turn.word[i] != board[row][col].first) {
+			 //the char to be inserted is different from the one in the board
+			if (board[row][col].first == ' ') {
+				//the position is free to recieve the char
 				vector<char>::iterator pos = find(rack.begin(), rack.end(), turn.word[i]);
-				if (pos != rack.end()) { //the char to be inserted is on the rack
+				if (pos != rack.end()) { 
+					//the char to be inserted is on the rack
 					spaceExists = true;
 					rack.erase(pos);
 				}
-				else { //the char isn't on the rack - invalid choice of word
+				else {
+					//the char isn't on the rack - invalid choice of word
 					cout << "You don't have enough letters to write your word. You lost your turn.\n";
 					validPosition = false;
 					break;
 				}
 			}
-			else { //the board already as another char on the position beeing tested - invalid placement of word
+			else { 
+				//the board already as another char on the position beeing tested - invalid placement of word
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				validPosition = false;
 				break;
 			}
 		}
-		else { //the board already has the char beeing inserted - the word isn't isolated
+		else { 
+			//the board already has the char beeing inserted - the word isn't isolated
 			isConnected = true;
 		}
 		if (turn.isVertical)
@@ -325,6 +333,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	int* row;
 	int* col;
 
+	//initialize Indexs -> col is considered parallel to vertical, and row perpendicular
 	if (turn.isVertical) {
 		initialPerpendicularIndex = turn.row;
 		initialParalelIndex = turn.col;
@@ -341,6 +350,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
+	//get the word formed in the same direction as the played word
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
 	if (!searchWord(path, testWord)) {
 		cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
@@ -355,6 +365,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 		changeColor = board[*row][*col].first == ' ';
 
 		string letter = { turn.word[i] };
+		//get the word formed in the perpendicular direction to the played word in initialPerpendicularIndex + i
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
 		if (testWord.length() > 1) {
 			if (!searchWord(path, testWord)) {
@@ -383,7 +394,8 @@ void updateScores(board_t& board, vector<Player>& players) {
 void showScores(const vector<Player>& players) {
 	cout << endl << setw(BOARD_SIZE - 2) << " ";
 	cout << "SCORE BOARD" << endl;
-	cout << setw(BOARD_SIZE - players.size() + 1) << " ";
+	int gaveUpSize = std::count_if(players.begin(), players.end(), [](const Player& p) { return p.gaveUp; });
+	cout << setw(BOARD_SIZE - players.size() + gaveUpSize + 1) << " ";
 	for (int i = 0; i < players.size(); i++) {
 		if (!players[i].gaveUp)
 			cout << players[i].color << setw(3) << players[i].score;
@@ -477,14 +489,13 @@ int main() {
 	int maxScore = -1;
 	Player* winnerPlayer = nullptr;
 	for (int i = 0; i < players.size(); i++) {
-		if (!players[current].gaveUp) {
+		if (!players[i].gaveUp) {
 			if (players[i].score > maxScore) {
 				maxScore = players[i].score;
 				winnerPlayer = &players[i];
 			}
 		}
 	}
-
 	cout << endl << "   " << bgGrey << winnerPlayer->color << "   " << winnerPlayer->name << " WON!   ";
 	cout << dfltColor << endl;
 
