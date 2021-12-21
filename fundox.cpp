@@ -11,7 +11,7 @@
 
 using namespace std;
 
-//set colors
+// set colors
 const std::string dfltColor = "\033[0m";
 const std::string bgGrey = "\033[47m";
 const std::string red = "\033[31m";
@@ -22,7 +22,23 @@ const std::string black = "\033[30m";
 const vector<string> colors = { red, blue, green, magenta };
 
 const int NUM_MAX_ATTEMPTS = 3;
-const size_t BOARD_SIZE = 13;
+const int BOARD_SIZE = 13;
+
+void readConfig(int &scoreMax, string &dictionaryPath, vector<char> &bag) {
+	string trash;
+	 
+	ifstream extractFile("CONFIG.txt");
+	if (!extractFile.is_open()) {
+		cout << "File CONFIG.txt not found!" << endl;
+		exit(1);
+	}
+	extractFile.ignore(1000, ':');
+	extractFile >> scoreMax;
+	extractFile.ignore(1000, ':');
+	extractFile >> dictionaryPath;
+	extractFile.ignore(1000, ':');
+	setBag(extractFile, bag);
+}
 
 void initBoard(board_t& board) {
 	for (int i = 0; i < BOARD_SIZE; i++) {
@@ -66,7 +82,7 @@ void setRack(vector<char>& bag, vector<char>& rack, bool restore) {
 		while (!rack.empty()) {
 			char letter = *rack.rbegin();
 			rack.pop_back();
-			//insert the letter extracted from the rack in a random position of the bag
+			// insert the letter extracted from the rack in a random position of the bag
 			bag.insert(bag.begin() + (rand() % bag.size()), letter);
 		}
 	}
@@ -109,21 +125,28 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 	cout << errorMessage;
 	return false;
 }
+bool searchWord(const string &path, string word) {
+	bool found = false;
+	ifstream wordsFile;
+	wordsFile.open(path);
 
-void readConfig(int &scoreMax, string &dictionaryPath, vector<char> &bag) {
-	string trash;
-	 
-	ifstream extractFile("CONFIG.txt");
-	if (!extractFile.is_open()) {
-		cout << "File CONFIG.txt not found!" << endl;
+	if (!wordsFile.is_open()) {
+		cout << "Error! File '" << path << "' not found.\n";
 		exit(1);
 	}
-	extractFile.ignore(1000, ':');
-	extractFile >> scoreMax;
-	extractFile.ignore(1000, ':');
-	extractFile >> dictionaryPath;
-	extractFile.ignore(1000, ':');
-	setBag(extractFile, bag);
+
+	for (int i = 0; i < word.length(); i++)
+		word[i] = tolower(word[i]);
+
+	while (!wordsFile.eof() && !found) {
+		string entry;
+		wordsFile >> entry;
+		if (entry == word)
+			found = true;
+	}
+	wordsFile.close();
+
+	return found;
 }
 
 void readNumPlayers(int& numPlayers) {
@@ -150,31 +173,7 @@ void readNamePlayer(vector<Player>& players, const int& index) {
 	}
 }
 
-bool searchWord(const string &path, string word) {
-	bool found = false;
-	ifstream wordsFile;
-	wordsFile.open(path);
-
-	if (!wordsFile.is_open()) {
-		cout << "Error! File '" << path << "' not found.\n";
-		exit(1);
-	}
-
-	for (int i = 0; i < word.length(); i++)
-		word[i] = tolower(word[i]);
-
-	while (!wordsFile.eof() && !found) {
-		string entry;
-		wordsFile >> entry;
-		if (entry == word)
-			found = true;
-	}
-	wordsFile.close();
-
-	return found;
-}
-
-TurnPlay readWord(string& word,const Player& player, const string& dictionary) {
+TurnPlay readWord(string& word, const Player& player, const string& dictionary) {
 	cout << player.color << player.name << "'s turn" << dfltColor << endl;
 	int attempts = 0;
 	while (attempts < NUM_MAX_ATTEMPTS) {
@@ -252,40 +251,40 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		turn.word[i] = toupper(turn.word[i]);
 
 	for (int i = 0; i < turn.word.size(); i++) {
-		//the cicle it's broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
+	// the cicle is broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
 		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) {
-			//the word get's out of the board limits
+			// the word get's out of the board limits
 			cout << "Your word doesn't fit on the board. You lost your turn.\n";
 			validPosition = false;
 			break;
 		}
 
 		if (turn.word[i] != board[row][col].first) {
-			 //the char to be inserted is different from the one in the board
+			 // the char to be inserted is different from the one in the board
 			if (board[row][col].first == ' ') {
-				//the position is free to recieve the char
+				// the position is free to recieve the char
 				vector<char>::iterator pos = find(rack.begin(), rack.end(), turn.word[i]);
 				if (pos != rack.end()) { 
-					//the char to be inserted is on the rack
+					// the char to be inserted is on the rack
 					spaceExists = true;
 					rack.erase(pos);
 				}
 				else {
-					//the char isn't on the rack - invalid choice of word
+					// the char isn't on the rack - invalid choice of word
 					cout << "You don't have enough letters to write your word. You lost your turn.\n";
 					validPosition = false;
 					break;
 				}
 			}
 			else { 
-				//the board already as another char on the position beeing tested - invalid placement of word
+				// the board already as another char on the position beeing tested - invalid placement of word
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				validPosition = false;
 				break;
 			}
 		}
 		else { 
-			//the board already has the char beeing inserted - the word isn't isolated
+			// the board already has the char beeing inserted - the word isn't isolated
 			isConnected = true;
 		}
 		if (turn.isVertical)
@@ -298,16 +297,11 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 }
 
 void getHalfLine(int& index, int*& row, int*& col, board_t& board, string& testWord, vector<Player**>& changePlayer, bool changeColor, int step) {
-	while (index >= 0 && index < BOARD_SIZE) {
-		if (board[*row][*col].first == ' ') {
-			break;
-		}
-		else {
-			testWord.push_back(board[*row][*col].first);
-			if (changeColor)
-				changePlayer.push_back(&(board[*row][*col].second));
-			index += step;
-		}
+	while (index >= 0 && index < BOARD_SIZE && board[*row][*col].first != ' ') {
+    testWord.push_back(board[*row][*col].first);
+    if (changeColor)
+      changePlayer.push_back(&(board[*row][*col].second));
+    index += step;
 	}
 }
 string getLine(int& index, int*& row, int*& col, board_t& board, const string wordPart, vector<Player**>& changePlayer, bool changeColor) {
@@ -333,7 +327,8 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	int* row;
 	int* col;
 
-	//initialize Indexs -> col is considered parallel to vertical, and row perpendicular
+	// initialize Indexes -> col is considered parallel to vertical and perpendicular to horizontal
+  //                    -> row is considered perpendicular to vertical and parallel to horizontal
 	if (turn.isVertical) {
 		initialPerpendicularIndex = turn.row;
 		initialParalelIndex = turn.col;
@@ -350,7 +345,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
-	//get the word formed in the same direction as the played word
+	// get the word formed in the same direction as the played word
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
 	if (!searchWord(path, testWord)) {
 		cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
@@ -365,7 +360,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 		changeColor = board[*row][*col].first == ' ';
 
 		string letter = { turn.word[i] };
-		//get the word formed in the perpendicular direction to the played word in initialPerpendicularIndex + i
+		// get the word formed by the letter i of the played word in it's perpendicular direction
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
 		if (testWord.length() > 1) {
 			if (!searchWord(path, testWord)) {
@@ -380,7 +375,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	return true;
 }
 
-void updateScores(board_t& board, vector<Player>& players) {
+void updateScores(const board_t& board, vector<Player>& players) {
 	for (int i = 0; i < players.size(); i++)
 		players[i].score = 0;
 
@@ -404,8 +399,9 @@ void showScores(const vector<Player>& players) {
 }
 
 
+
 int main() {
-	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE)); //tabuleiro matriz de pares (letra, player)
+	board_t board(BOARD_SIZE, vector<pair<char, Player*>>(BOARD_SIZE));
 	vector<char> bag;
 	vector<char> rack, possibleRack;
 	vector<Player> players;
@@ -435,8 +431,8 @@ int main() {
 	Turn turn;
 	while (players[current].score < SCORE_MAX && passRounds < 3 && numPlayers > 1) {
 		current = (current + 1) % INITIAL_NUM_PLAYERS;
-		if (!players[current].gaveUp) {
 
+		if (!players[current].gaveUp) {
 			bool restoreRack = (passRounds > 0 && passTurns == 0);
 			setRack(bag, rack, restoreRack);
 			showScores(players);
@@ -484,34 +480,35 @@ int main() {
 			}
 		}
 	}
+
 	showScores(players);
 	showBoard(board);
+
+	int numWinners = 0;
 	int maxScore = -1;
-	Player* winnerPlayer = nullptr;
+	vector<Player*> winnerPlayers;
 	for (int i = 0; i < players.size(); i++) {
 		if (!players[i].gaveUp) {
 			if (players[i].score > maxScore) {
+				winnerPlayers.clear();
+				winnerPlayers.push_back(&players[i]);
 				maxScore = players[i].score;
-				winnerPlayer = &players[i];
+			}
+			else if (players[i].score == maxScore) {
+				winnerPlayers.push_back(&players[i]);
 			}
 		}
 	}
-	cout << endl << "   " << bgGrey << winnerPlayer->color << "   " << winnerPlayer->name << " WON!   ";
-	cout << dfltColor << endl;
+	
+	if (winnerPlayers.size() == 1) {
+		cout << endl << "   " << bgGrey << winnerPlayers[0]->color << "   " << winnerPlayers[0]->name << " WON!   " << dfltColor << endl;
+	}
+	else if (winnerPlayers.size() > 1) {
+		cout << endl << "   " << "It's a tie between:" << endl;
+		for (int i = 0;i < winnerPlayers.size();i++) {
+			cout << "   " << bgGrey << winnerPlayers[i]->color << "   " << winnerPlayers[i]->name << "   " << dfltColor << endl;
+		}
+	}
 
 	return 0;
 }
-
-//initialiar o tabuleiro (13x13)
-//ler numero de pontos do ficheiro
-//letras no bag
-//desordenar o bag (rand de vetor de n�meros)
-//rack (7) - ordem alfab�tica
-//pedir o n de jogadores (com cor do jogador) - tem que estar enter 2 e 4
-//inicializar vector players (vector com cores) 
-//while()
-//jogada - palavra, linha, coluna, horizontal/vertical (m ou M) - passar/desistir
-//se todos passarem rack feita de novo (volta para o bag) - 
-//usar as letras do tabuleiro passam para a cor do jogador e tira pontos ao outro
-//repor rack
-//fim do jogo: n de pontos/ todos os jogadores passam a vez em 3 rondas seguidas
