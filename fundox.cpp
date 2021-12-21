@@ -121,7 +121,7 @@ void readNumPlayers(int& numPlayers) {
 void readNamePlayers(vector<Player>& players, const int& index) {
 	while (true) {
 		cout << colors[index] << "Player " << index + 1 << ": ";
-		getline(cin, players[index].name); //fiz getline para poder ser mais que um nome (suposto?)
+		getline(cin, players[index].name);
 		cout << dfltColor;
 		if (valid("getline", "Please insert a valid name\n")) {
 			if (players[index].name.size() == 0) {
@@ -190,7 +190,7 @@ TurnPlay readWord(string& word, Player& player, const string& dictionary) {
 void readDirection(Turn& turn) {
 	char direction;
 	while (true) {
-		cout << "Direction(H / V) : ";
+		cout << "Direction (H / V) : ";
 		cin >> direction;
 		if (valid("cin")) {
 			if (direction == 'v' || direction == 'V') {
@@ -202,7 +202,7 @@ void readDirection(Turn& turn) {
 				return;
 			}
 		}
-		cout << "The input must be H/h for horizontal or v/V for vertical!\n";
+		cout << "The input must be H/h for horizontal or V/v for vertical!\n";
 	}
 }
 void readPosition(Turn& turn) {
@@ -325,7 +325,6 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	paralelIndex = initialParalelIndex;
 	perpendicularIndex = initialPerpendicularIndex;
 	testWord = getLine(perpendicularIndex, row, col, board, turn.word, changePlayer, true);
-	cout << "same diection testWord: " << testWord << endl;
 	if (!searchWord(path, testWord)) {
 		cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 		return false;
@@ -340,7 +339,6 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 
 		string letter = { turn.word[i] };
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
-		cout << "other direction testWOED: " << testWord << endl;
 		if (testWord.length() > 1) {
 			if (!searchWord(path, testWord)) {
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
@@ -365,12 +363,13 @@ void updateScores(board_t& board, vector<Player>& players) {
 		}
 	}
 }
-void showScores(const vector<Player>& players) {
+void showScores(const vector<Player>& players, const vector<int>& gaveUp) {
 	cout << endl << setw(BOARD_SIZE - 2) << " ";
 	cout << "SCORE BOARD" << endl;
-	cout << setw(BOARD_SIZE - players.size() + 4) << " ";
+	cout << setw(BOARD_SIZE - players.size() + gaveUp.size() + 1) << " ";
 	for (int i = 0; i < players.size(); i++) {
-		cout << players[i].color << players[i].score << " ";
+		if (find(gaveUp.begin(), gaveUp.end(), i) == gaveUp.end())
+			cout << players[i].color << setw(3) << players[i].score;
 	}
 	cout << dfltColor << endl;
 }
@@ -422,7 +421,7 @@ int main() {
 		if (find(gaveUp.begin(), gaveUp.end(), current) == gaveUp.end()) {
 
 			bool restoreRack = (passRounds > 0 && passTurns == 0);
-			showScores(players);
+			showScores(players, gaveUp);
 			setRack(bag, rack, restoreRack);
 			showBoard(board);
 			showRack(rack);
@@ -467,6 +466,7 @@ int main() {
 			updateScores(board, players);
 		}
 	}
+	showScores(players, gaveUp);
 	showBoard(board);
 	int maxScore = -1;
 	Player* winnerPointer = nullptr;
@@ -477,7 +477,9 @@ int main() {
 			}
 		}
 	}
-	cout << endl << winnerPointer->color << winnerPointer->name << " WON!" << dfltColor << endl;
+
+	cout << endl << "   " << bgGrey << winnerPointer->color << "   " << winnerPointer->name << " WON!   ";
+	cout << dfltColor << endl;
 	return 0;
 }
 

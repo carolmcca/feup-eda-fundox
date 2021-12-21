@@ -26,33 +26,67 @@ typedef enum {
 
 using board_t = std::vector<std::vector<std::pair<char, Player*>>>;
 
-/*void initBoard(board_t& board, const size_t boardSize);
-void showBoard(const board_t& board, const size_t boardSize);
+/*
+* BRIEF: initializes the game board (2D matrix of pairs of(" ", nullptr))
+*/
+void initBoard(board_t& board);
 
-void setBag(std::ifstream& extractFile, std::vector<char>& bag);
+/*
+* BRIEF: displays the game board
+*/
+void showBoard(const board_t& board);
 
-void setRack(std::vector<char>& bag, std::vector<char>& rack);
-void showRack(const std::vector<char>& rack);
+/*
+* BRIEF: defines the rack - extracts letters from the bag until the rack has 7 letters and orders them alphabeticaly
+*/
+void setRack(vector<char>& bag, vector<char>& rack, bool restore);
 
-bool valid(const std::string& inputType, const std::string errorMessage, const char terminator);
+/*
+* BREIF: displays the rack
+*/
+void showRack(const vector<char>& rack);
 
+/*
+* BRIEF: checks if the input stream is OK
+* RETURN: true if the input is of the expected type and false otherwise
+*/
+bool valid(const string& inputType, const string errorMessage = "", const char terminator = '\n');
+
+/*
+* BRIEF: reads the number of players from the keyboard, repeating endlessly if the input is invalid
+*/
 void readNumPlayers(int& numPlayers);
-void readNamePlayers(std::vector<Player>& players, const int& index);
 
-bool searchWord(std::string path, std::string word);
+/*
+* BRIEF: reads the name of the players from the keyboard, repeating endlessly if the input is invalid
+		 (default name: PlayerX, being X the number of the player)
+*/
+void readNamePlayers(vector<Player>& players, const int& index);
 
-int readWord(std::string& word, Player& player, const std::string& dictionary);
+/*
+* BRIEF: searches for the word on the file indicated by path
+* RETURN: true if the word is on the file and false otherwise
+*/
+bool searchWord(string path, string word);
+
+/*
+*BRIEF: reads the played word from the keyboard 
+*RETURN: PASS if the player passed or inserted an invalid word more than 3 times, PLAY if the player played or GIVEUP if the player gave up
+*/
+TurnPlay readWord(string& word, Player& player, const string& dictionary);
+
+/*
+*BRIEF: reads the direction of the word (H / V) from the keyboard, repeating endlessly if the input is invalid
+*/
 void readDirection(Turn& turn);
+
+/*
+*BRIEF: reads the position of the played word (ROW column) from the keyboard, repeating endlessly if the input is invalid
+*/
 void readPosition(Turn& turn);
 
-
-void getHalfLine(int& index, int* &row, int* &col, board_t& board, std::string& testWord, std::vector<Player**> &changePlayer, bool changeColor, int step);
-std::string getLine(int& index, int* &row, int* &col, board_t& board, const std::string wordPart, std::vector<Player**> &changePlayer, bool changeColor);
-bool checkWordPlacement(board_t& board, const Turn& turn, const std::string path, Player& player, std::vector<Player**> &changePlayer);
+/*
+*BRIEF: checks if each letter of the word can be placed on the indicated position
+*RETURN: rack without the letters that can be inserted on the board
 */
-
-
-
-
-
-
+vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool& isConnected);
