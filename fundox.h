@@ -5,7 +5,9 @@
 #include <utility>
 #include <fstream>
 
-
+/**
+ * @brief saves the information of a player: name, color, score and state (if the player has gave up ou not)
+ */
 typedef struct {
 	std::string name;
 	std::string color;
@@ -13,6 +15,9 @@ typedef struct {
 	bool gaveUp;
 } Player;
 
+/**
+ * @brief saves the chosen word, position and direction on each turn
+ */
 typedef struct {
 	std::string word;
 	int row;
@@ -21,8 +26,7 @@ typedef struct {
 } Turn;
 
 /**
- * @brief 
- * 
+ * @brief reveals the player's choice on a given turn
  */
 typedef enum {
 	PASS,
