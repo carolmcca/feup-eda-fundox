@@ -1,2 +1,7 @@
+.*
+!.gitignore
 Debug/
+.vscode/
+.vs/carolProjeto/
 *.vcxproj*
+*.sln
