@@ -6,7 +6,7 @@
 #include <fstream>
 
 /**
- * @brief saves the information of a player: name, color, score and state (if the player has gave up ou not)
+ * @brief saves the information of a player: name, color, score and state (if the player has given up or not)
  */
 typedef struct {
 	std::string name;
@@ -52,7 +52,9 @@ void initBoard(board_t& board);
 void showBoard(const board_t& board);
 
 /**
-*
+* @brief defines the bag - extracts the letters and their number of occurences from the ifstream extractFile
+			puts the letters in the bag the correct amount of times
+			shuffles the bag
 */
 void setBag(std::ifstream& extractFile, std::vector<char>& bag);
 
@@ -92,18 +94,19 @@ void readNamePlayer(std::vector<Player>& players, const int& index);
 */
 TurnPlay readWord(std::string& word, const Player& player, const std::string& dictionary);
 /**
-* @brief reads the direction of the word (H / V) from the keyboard, repeating endlessly untill the input is valid
+* @brief reads the direction of the word (H / V) from the keyboard, repeating endlessly until the input is valid
 */
 void readDirection(Turn& turn);
 /**
-* @brief reads the position of the played word (ROW column) from the keyboard, repeating endlessly untill the input is valid
+* @brief reads the position of the played word (ROW column) from the keyboard, repeating endlessly until the input is valid
 */
 void readPosition(Turn& turn);
 
 /**
-* @brief checks if the word uses letters of another word and if each letter can be placed on the indicated position, that is if the word:
+* @brief checks if the word uses letters of another word and if each letter can be placed in the indicated position, that is if the word:
 *               doesn't get out of the board limits
 *			    doesn't overlap inconsistently with another one
+*				isn't already written in the specified position
 *			    is writable with the available letters
 * @return rack without the letters that can be inserted on the board
 */

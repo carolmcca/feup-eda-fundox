@@ -250,7 +250,7 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		turn.word[i] = toupper(turn.word[i]);
 
 	for (int i = 0; i < turn.word.size(); i++) {
-		// the cicle is broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
+		// the cicle is broken if the word get's out of the board, overlaps with another word or there aren't enough letters to write it
 		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) {
 			// the word get's out of the board limits
 			cout << "Your word doesn't fit on the board. You lost your turn.\n";
@@ -261,7 +261,7 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		if (turn.word[i] != board[row][col].first) {
 			// the char to be inserted is different from the one in the board
 			if (board[row][col].first == ' ') {
-				// the position is free to recieve the char
+				// the position is free to receive the char
 				vector<char>::iterator pos = find(rack.begin(), rack.end(), turn.word[i]);
 				if (pos != rack.end()) {
 					// the char to be inserted is on the rack
@@ -276,14 +276,14 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 				}
 			}
 			else {
-				// the board already as another char on the position beeing tested - invalid placement of word
+				// the board already as another char on the position being tested - invalid placement of word
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				validPosition = false;
 				break;
 			}
 		}
 		else {
-			// the board already has the char beeing inserted - the word isn't isolated
+			// the board already has the char being inserted - the word isn't isolated
 			isConnected = true;
 		}
 		if (turn.isVertical)
@@ -327,7 +327,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 	int* col;
 
 	// initialize Indexes -> col is considered parallel to vertical and perpendicular to horizontal
-  //                    -> row is considered perpendicular to vertical and parallel to horizontal
+	//                    -> row is considered perpendicular to vertical and parallel to horizontal
 	if (turn.isVertical) {
 		initialPerpendicularIndex = turn.row;
 		initialParalelIndex = turn.col;
@@ -359,7 +359,7 @@ bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Pla
 		changeColor = board[*row][*col].first == ' ';
 
 		string letter = { turn.word[i] };
-		// get the word formed by the letter i of the played word in it's perpendicular direction
+		// get the word formed by the letter i of the played word in its perpendicular direction
 		testWord = getLine(paralelIndex, row, col, board, letter, changePlayer, changeColor);
 		if (testWord.length() > 1) {
 			if (!searchWord(path, testWord)) {
@@ -503,7 +503,7 @@ int main() {
 		cout << endl << "   " << bgGrey << winnerPlayers[0]->color << "   " << winnerPlayers[0]->name << " WON!   " << dfltColor << endl;
 	}
 	else if (winnerPlayers.size() > 1) {
-		cout << endl << "   " << "It's a tie between:" << endl;
+		cout << endl << "   " << "It's a tie! Winning players: " << endl;
 		for (int i = 0; i < winnerPlayers.size(); i++) {
 			cout << "   " << bgGrey << winnerPlayers[i]->color << "   " << winnerPlayers[i]->name << "   " << dfltColor << endl;
 		}
