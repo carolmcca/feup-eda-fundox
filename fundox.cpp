@@ -24,9 +24,8 @@ const vector<string> colors = { red, blue, green, magenta };
 const int NUM_MAX_ATTEMPTS = 3;
 const int BOARD_SIZE = 13;
 
-void readConfig(int &scoreMax, string &dictionaryPath, vector<char> &bag) {
-	string trash;
-	 
+void readConfig(int& scoreMax, string& dictionaryPath, vector<char>& bag) {
+
 	ifstream extractFile("CONFIG.txt");
 	if (!extractFile.is_open()) {
 		cout << "File CONFIG.txt not found!" << endl;
@@ -125,7 +124,7 @@ bool valid(const string& inputType, const string errorMessage = "", const char t
 	cout << errorMessage;
 	return false;
 }
-bool searchWord(const string &path, string word) {
+bool searchWord(const string& path, string word) {
 	bool found = false;
 	ifstream wordsFile;
 	wordsFile.open(path);
@@ -242,7 +241,7 @@ void readPosition(Turn& turn) {
 	}
 }
 
-vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool &isConnected) {
+vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char> rack, bool& validPosition, bool& isConnected) {
 	bool spaceExists = false; // dictates whether or not the word is new 
 	int row = turn.row;
 	int col = turn.col;
@@ -251,7 +250,7 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		turn.word[i] = toupper(turn.word[i]);
 
 	for (int i = 0; i < turn.word.size(); i++) {
-	// the cicle is broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
+		// the cicle is broke if the word get's out of the board, overlaps with another or there aren't enough letters to write it
 		if (turn.row == BOARD_SIZE || turn.col == BOARD_SIZE) {
 			// the word get's out of the board limits
 			cout << "Your word doesn't fit on the board. You lost your turn.\n";
@@ -260,11 +259,11 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 		}
 
 		if (turn.word[i] != board[row][col].first) {
-			 // the char to be inserted is different from the one in the board
+			// the char to be inserted is different from the one in the board
 			if (board[row][col].first == ' ') {
 				// the position is free to recieve the char
 				vector<char>::iterator pos = find(rack.begin(), rack.end(), turn.word[i]);
-				if (pos != rack.end()) { 
+				if (pos != rack.end()) {
 					// the char to be inserted is on the rack
 					spaceExists = true;
 					rack.erase(pos);
@@ -276,14 +275,14 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 					break;
 				}
 			}
-			else { 
+			else {
 				// the board already as another char on the position beeing tested - invalid placement of word
 				cout << "Your choice of word placement is impossible with the current board. You lost you turn.";
 				validPosition = false;
 				break;
 			}
 		}
-		else { 
+		else {
 			// the board already has the char beeing inserted - the word isn't isolated
 			isConnected = true;
 		}
@@ -298,10 +297,10 @@ vector<char> checkExistingLetters(const board_t& board, Turn& turn, vector<char>
 
 void getHalfLine(int& index, int*& row, int*& col, board_t& board, string& testWord, vector<Player**>& changePlayer, bool changeColor, int step) {
 	while (index >= 0 && index < BOARD_SIZE && board[*row][*col].first != ' ') {
-    testWord.push_back(board[*row][*col].first);
-    if (changeColor)
-      changePlayer.push_back(&(board[*row][*col].second));
-    index += step;
+		testWord.push_back(board[*row][*col].first);
+		if (changeColor)
+			changePlayer.push_back(&(board[*row][*col].second));
+		index += step;
 	}
 }
 string getLine(int& index, int*& row, int*& col, board_t& board, const string wordPart, vector<Player**>& changePlayer, bool changeColor) {
@@ -318,7 +317,7 @@ string getLine(int& index, int*& row, int*& col, board_t& board, const string wo
 	return testWord;
 }
 
-bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**>& changePlayer, bool &isConnected) {
+bool checkWordPlacement(board_t& board, const Turn& turn, const string path, Player& player, vector<Player**>& changePlayer, bool& isConnected) {
 	changePlayer.clear();
 	string testWord;
 	bool changeColor;
@@ -472,7 +471,7 @@ int main() {
 				}
 				for (int i = 0; i < changePlayer.size(); i++)
 					*changePlayer[i] = &players[current];
-				
+
 				updateScores(board, players);
 			}
 			else {
@@ -499,13 +498,13 @@ int main() {
 			}
 		}
 	}
-	
+
 	if (winnerPlayers.size() == 1) {
 		cout << endl << "   " << bgGrey << winnerPlayers[0]->color << "   " << winnerPlayers[0]->name << " WON!   " << dfltColor << endl;
 	}
 	else if (winnerPlayers.size() > 1) {
 		cout << endl << "   " << "It's a tie between:" << endl;
-		for (int i = 0;i < winnerPlayers.size();i++) {
+		for (int i = 0; i < winnerPlayers.size(); i++) {
 			cout << "   " << bgGrey << winnerPlayers[i]->color << "   " << winnerPlayers[i]->name << "   " << dfltColor << endl;
 		}
 	}
